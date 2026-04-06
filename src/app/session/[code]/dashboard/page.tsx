@@ -327,8 +327,8 @@ export default function DashboardPage({
     <div className="flex flex-1 flex-col px-4 pt-8 pb-12">
       {/* 토스트 알림 */}
       {toast && (
-        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 animate-[fadeInDown_0.3s_ease-out] rounded-xl border border-primary/20 bg-card px-5 py-3 shadow-lg">
-          <p className="text-sm font-medium text-foreground">{toast}</p>
+        <div className="fixed top-6 left-1/2 z-50 -translate-x-1/2 animate-[fadeInDown_0.3s_ease-out] rounded-2xl bg-primary px-8 py-4 shadow-2xl shadow-primary/25">
+          <p className="text-base font-bold text-white">{toast}</p>
         </div>
       )}
 
