@@ -43,25 +43,53 @@ export default function StudentPage({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [lastSent, setLastSent] = useState<string | null>(null);
+  const [ended, setEnded] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase
         .from("sessions")
-        .select("id")
+        .select("id, is_active")
         .eq("code", code)
-        .eq("is_active", true)
         .single();
 
       if (data) {
         setSessionId(data.id);
+        if (!data.is_active) setEnded(true);
       } else {
-        setError("존재하지 않거나 종료된 수업입니다.");
+        setError("존재하지 않는 수업입니다.");
       }
     }
     loadSession();
   }, [code]);
+
+  // 수업 종료 Realtime 감지
+  useEffect(() => {
+    if (!sessionId || ended) return;
+
+    const channel = supabase
+      .channel(`session-status-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "sessions",
+          filter: `id=eq.${sessionId}`,
+        },
+        (payload) => {
+          if (payload.new && payload.new.is_active === false) {
+            setEnded(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, ended]);
 
   const handleSignal = async (signalId: ResponseType) => {
     if (!sessionId) return;
@@ -98,6 +126,28 @@ export default function StudentPage({
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-muted">수업 연결 중...</p>
+      </div>
+    );
+  }
+
+  if (ended) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8">
+          <div className="mb-4 text-4xl">📚</div>
+          <h1 className="mb-2 text-xl font-bold text-foreground">
+            수업이 종료되었습니다
+          </h1>
+          <p className="mb-6 text-sm text-muted">
+            수고하셨습니다! 오늘 수업은 여기까지입니다.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            홈으로 돌아가기
+          </Link>
+        </div>
       </div>
     );
   }

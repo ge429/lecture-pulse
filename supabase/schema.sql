@@ -55,5 +55,6 @@ create policy "Anyone can read questions" on questions for select using (true);
 create policy "Anyone can create questions" on questions for insert with check (true);
 
 -- Realtime 활성화
+alter publication supabase_realtime add table sessions;
 alter publication supabase_realtime add table responses;
 alter publication supabase_realtime add table questions;
