@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -14,13 +14,6 @@ interface Question {
 }
 
 interface Stats {
-  understood: number;
-  confused: number;
-  lost: number;
-}
-
-interface HistoryPoint {
-  t: number; // timestamp ms
   understood: number;
   confused: number;
   lost: number;
@@ -131,101 +124,7 @@ function DonutChart({ stats }: { stats: Stats }) {
   );
 }
 
-// ── HistoryChart (sparkline area) ────────────────────────────────────────────
-
-const HISTORY_MAX = 20;
-const W = 480, H = 80;
-
-function HistoryChart({ history }: { history: HistoryPoint[] }) {
-  if (history.length < 2) {
-    return (
-      <p className="py-4 text-center text-sm text-muted">
-        데이터가 2개 이상 쌓이면 추이가 표시됩니다.
-      </p>
-    );
-  }
-
-  const maxTotal = Math.max(...history.map((h) => h.understood + h.confused + h.lost), 1);
-
-  // Build stacked area paths: lost (bottom) → confused → understood (top)
-  const xs = history.map((_, i) => (i / (history.length - 1)) * W);
-
-  function stackedY(h: HistoryPoint, includeUnderstood: boolean, includeConfused: boolean) {
-    let v = h.lost;
-    if (includeConfused) v += h.confused;
-    if (includeUnderstood) v += h.understood;
-    return H - (v / maxTotal) * H;
-  }
-
-  function areaPath(
-    topY: (h: HistoryPoint) => number,
-    botY: (h: HistoryPoint) => number
-  ) {
-    const top = history.map((h, i) => `${xs[i].toFixed(1)},${topY(h).toFixed(1)}`).join(" L ");
-    const bot = [...history]
-      .reverse()
-      .map((h, i) => {
-        const ri = history.length - 1 - i;
-        return `${xs[ri].toFixed(1)},${botY(h).toFixed(1)}`;
-      })
-      .join(" L ");
-    return `M ${top} L ${bot} Z`;
-  }
-
-  const paths = [
-    {
-      color: "#22c55e",
-      opacity: 0.85,
-      d: areaPath(
-        (h) => stackedY(h, true, true),
-        (h) => stackedY(h, false, true)
-      ),
-    },
-    {
-      color: "#f59e0b",
-      opacity: 0.85,
-      d: areaPath(
-        (h) => stackedY(h, false, true),
-        (h) => stackedY(h, false, false)
-      ),
-    },
-    {
-      color: "#ef4444",
-      opacity: 0.85,
-      d: areaPath(
-        (h) => stackedY(h, false, false),
-        () => H
-      ),
-    },
-  ];
-
-  const firstMs = history[0].t;
-  const lastMs = history[history.length - 1].t;
-
-  function fmtTime(ms: number) {
-    const d = new Date(ms);
-    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-  }
-
-  return (
-    <div className="w-full overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${W} ${H + 20}`}
-        className="w-full"
-        style={{ minWidth: 280 }}
-      >
-        {paths.map((p, i) => (
-          <path key={i} d={p.d} fill={p.color} opacity={p.opacity} />
-        ))}
-        {/* axis labels */}
-        <text x={0} y={H + 16} fontSize="10" fill="#64748b">{fmtTime(firstMs)}</text>
-        <text x={W} y={H + 16} textAnchor="end" fontSize="10" fill="#64748b">{fmtTime(lastMs)}</text>
-      </svg>
-    </div>
-  );
-}
-
-// ── StatBar (기존) ─────────────────────────────────────────────────────────────
+// ── StatBar ───────────────────────────────────────────────────────────────────
 
 function StatBar({
   label,
@@ -270,23 +169,10 @@ export default function DashboardPage({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionName, setSessionName] = useState("");
   const [stats, setStats] = useState<Stats>({ understood: 0, confused: 0, lost: 0 });
-  const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [clustering, setClustering] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState("");
-  const lastHistoryRef = useRef<number>(0);
-
-  const pushHistory = useCallback((s: Stats) => {
-    const now = Date.now();
-    // 최소 30초 간격으로만 히스토리 기록
-    if (now - lastHistoryRef.current < 30_000) return;
-    lastHistoryRef.current = now;
-    setHistory((prev) => {
-      const next = [...prev, { t: now, ...s }];
-      return next.length > HISTORY_MAX ? next.slice(next.length - HISTORY_MAX) : next;
-    });
-  }, []);
 
   const fetchStats = useCallback(
     async (sid: string) => {
@@ -313,9 +199,8 @@ export default function DashboardPage({
         counts[type]++;
       }
       setStats(counts);
-      pushHistory(counts);
     },
-    [pushHistory]
+    []
   );
 
   const fetchQuestions = useCallback(async (sid: string) => {
@@ -485,19 +370,6 @@ export default function DashboardPage({
             </div>
           </div>
         )}
-
-        {/* 추이 차트 */}
-        <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-          <h2 className="mb-3 text-sm font-semibold text-muted uppercase tracking-wide">
-            이해도 추이
-          </h2>
-          <div className="mb-2 flex gap-3 text-xs text-muted">
-            <span><span className="inline-block w-2 h-2 rounded-full bg-success mr-1" />이해됨</span>
-            <span><span className="inline-block w-2 h-2 rounded-full bg-warning mr-1" />헷갈림</span>
-            <span><span className="inline-block w-2 h-2 rounded-full bg-danger mr-1" />모르겠음</span>
-          </div>
-          <HistoryChart history={history} />
-        </div>
 
         {/* 질문 패널 */}
         <QuestionsPanel
