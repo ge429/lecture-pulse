@@ -32,13 +32,24 @@ body {
   color: var(--foreground);
 }
 
-@keyframes fadeInDown {
-  from {
+@keyframes toastIn {
+  0% {
     opacity: 0;
-    transform: translate(-50%, -12px);
+    transform: translate(-50%, -20px) scale(0.95);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -10px) scale(0.95);
   }
 }

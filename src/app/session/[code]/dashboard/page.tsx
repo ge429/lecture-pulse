@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -173,6 +173,8 @@ export default function DashboardPage({
   const [clustering, setClustering] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const [error, setError] = useState("");
 
   const fetchStats = useCallback(
@@ -287,8 +289,14 @@ export default function DashboardPage({
         },
         () => {
           fetchQuestions(sessionId);
+          // 이전 타이머 정리
+          if (toastTimer.current) clearTimeout(toastTimer.current);
           setToast("💬 새로운 질문이 들어왔습니다!");
-          setTimeout(() => setToast(null), 3000);
+          setToastVisible(true);
+          toastTimer.current = setTimeout(() => {
+            setToastVisible(false);
+            setTimeout(() => setToast(null), 400);
+          }, 2600);
         }
       )
       .subscribe();
@@ -327,7 +335,14 @@ export default function DashboardPage({
     <div className="flex flex-1 flex-col px-4 pt-8 pb-12">
       {/* 토스트 알림 */}
       {toast && (
-        <div className="fixed top-6 left-1/2 z-50 -translate-x-1/2 animate-[fadeInDown_0.3s_ease-out] rounded-2xl bg-primary px-8 py-4 shadow-2xl shadow-primary/25">
+        <div
+          className="fixed top-6 left-1/2 z-50 rounded-2xl bg-primary px-8 py-4 shadow-2xl shadow-primary/25"
+          style={{
+            animation: toastVisible
+              ? "toastIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards"
+              : "toastOut 0.4s cubic-bezier(0.16,1,0.3,1) forwards",
+          }}
+        >
           <p className="text-base font-bold text-white">{toast}</p>
         </div>
       )}
