@@ -1,0 +1,644 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { use } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import type { ResponseType } from "@/lib/database.types";
+
+interface Question {
+  id: string;
+  text: string;
+  cluster_id: number | null;
+  created_at: string;
+}
+
+interface Stats {
+  understood: number;
+  confused: number;
+  lost: number;
+}
+
+interface HistoryPoint {
+  t: number; // timestamp ms
+  understood: number;
+  confused: number;
+  lost: number;
+}
+
+// ── SVG helpers ────────────────────────────────────────────────────────────────
+
+function polar(cx: number, cy: number, r: number, deg: number) {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function donutSlice(
+  cx: number,
+  cy: number,
+  ro: number,
+  ri: number,
+  start: number,
+  end: number
+) {
+  if (end - start >= 360) end = start + 359.99;
+  const large = end - start > 180 ? 1 : 0;
+  const os = polar(cx, cy, ro, start);
+  const oe = polar(cx, cy, ro, end);
+  const ie = polar(cx, cy, ri, end);
+  const is_ = polar(cx, cy, ri, start);
+  return (
+    `M ${os.x.toFixed(2)} ${os.y.toFixed(2)} ` +
+    `A ${ro} ${ro} 0 ${large} 1 ${oe.x.toFixed(2)} ${oe.y.toFixed(2)} ` +
+    `L ${ie.x.toFixed(2)} ${ie.y.toFixed(2)} ` +
+    `A ${ri} ${ri} 0 ${large} 0 ${is_.x.toFixed(2)} ${is_.y.toFixed(2)} Z`
+  );
+}
+
+// ── DonutChart ────────────────────────────────────────────────────────────────
+
+function DonutChart({ stats }: { stats: Stats }) {
+  const total = stats.understood + stats.confused + stats.lost;
+  const cx = 80, cy = 80, ro = 68, ri = 44;
+
+  const segments: { value: number; color: string; label: string }[] = [
+    { value: stats.understood, color: "#22c55e", label: "이해됨" },
+    { value: stats.confused,   color: "#f59e0b", label: "헷갈림" },
+    { value: stats.lost,       color: "#ef4444", label: "모르겠음" },
+  ];
+
+  let cursor = 0;
+  const slices = segments.map((seg) => {
+    const sweep = total > 0 ? (seg.value / total) * 360 : 0;
+    const start = cursor;
+    cursor += sweep;
+    return { ...seg, start, sweep };
+  });
+
+  // confusion rate for center label
+  const confusionPct =
+    total > 0 ? Math.round(((stats.confused + stats.lost) / total) * 100) : 0;
+
+  return (
+    <div className="flex items-center gap-6">
+      <svg width="160" height="160" viewBox="0 0 160 160" className="shrink-0">
+        {total === 0 ? (
+          <circle cx={cx} cy={cy} r={ro} fill="none" stroke="#e2e8f0" strokeWidth={ri - 4} />
+        ) : (
+          slices.map((s, i) =>
+            s.sweep > 0 ? (
+              <path
+                key={i}
+                d={donutSlice(cx, cy, ro, ri, s.start, s.start + s.sweep)}
+                fill={s.color}
+                className="transition-all duration-500"
+              />
+            ) : null
+          )
+        )}
+        {/* center text */}
+        <text x={cx} y={cy - 6} textAnchor="middle" fontSize="22" fontWeight="700" fill="#0f172a">
+          {total > 0 ? `${confusionPct}%` : "—"}
+        </text>
+        <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#64748b">
+          혼란도
+        </text>
+      </svg>
+
+      {/* legend */}
+      <div className="flex flex-col gap-3 text-sm">
+        {segments.map((seg) => {
+          const pct = total > 0 ? Math.round((seg.value / total) * 100) : 0;
+          return (
+            <div key={seg.label} className="flex items-center gap-2">
+              <span
+                className="inline-block w-3 h-3 rounded-full shrink-0"
+                style={{ background: seg.color }}
+              />
+              <span className="text-muted w-16">{seg.label}</span>
+              <span className="font-bold tabular-nums">
+                {seg.value}명
+              </span>
+              <span className="text-muted tabular-nums text-xs">({pct}%)</span>
+            </div>
+          );
+        })}
+        <div className="pt-1 border-t border-border text-muted text-xs">
+          합계 {total}명
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── HistoryChart (sparkline area) ────────────────────────────────────────────
+
+const HISTORY_MAX = 20;
+const W = 480, H = 80;
+
+function HistoryChart({ history }: { history: HistoryPoint[] }) {
+  if (history.length < 2) {
+    return (
+      <p className="py-4 text-center text-sm text-muted">
+        데이터가 2개 이상 쌓이면 추이가 표시됩니다.
+      </p>
+    );
+  }
+
+  const maxTotal = Math.max(...history.map((h) => h.understood + h.confused + h.lost), 1);
+
+  // Build stacked area paths: lost (bottom) → confused → understood (top)
+  const xs = history.map((_, i) => (i / (history.length - 1)) * W);
+
+  function stackedY(h: HistoryPoint, includeUnderstood: boolean, includeConfused: boolean) {
+    let v = h.lost;
+    if (includeConfused) v += h.confused;
+    if (includeUnderstood) v += h.understood;
+    return H - (v / maxTotal) * H;
+  }
+
+  function areaPath(
+    topY: (h: HistoryPoint) => number,
+    botY: (h: HistoryPoint) => number
+  ) {
+    const top = history.map((h, i) => `${xs[i].toFixed(1)},${topY(h).toFixed(1)}`).join(" L ");
+    const bot = [...history]
+      .reverse()
+      .map((h, i) => {
+        const ri = history.length - 1 - i;
+        return `${xs[ri].toFixed(1)},${botY(h).toFixed(1)}`;
+      })
+      .join(" L ");
+    return `M ${top} L ${bot} Z`;
+  }
+
+  const paths = [
+    {
+      color: "#22c55e",
+      opacity: 0.85,
+      d: areaPath(
+        (h) => stackedY(h, true, true),
+        (h) => stackedY(h, false, true)
+      ),
+    },
+    {
+      color: "#f59e0b",
+      opacity: 0.85,
+      d: areaPath(
+        (h) => stackedY(h, false, true),
+        (h) => stackedY(h, false, false)
+      ),
+    },
+    {
+      color: "#ef4444",
+      opacity: 0.85,
+      d: areaPath(
+        (h) => stackedY(h, false, false),
+        () => H
+      ),
+    },
+  ];
+
+  const firstMs = history[0].t;
+  const lastMs = history[history.length - 1].t;
+
+  function fmtTime(ms: number) {
+    const d = new Date(ms);
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  }
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg
+        viewBox={`0 0 ${W} ${H + 20}`}
+        className="w-full"
+        style={{ minWidth: 280 }}
+      >
+        {paths.map((p, i) => (
+          <path key={i} d={p.d} fill={p.color} opacity={p.opacity} />
+        ))}
+        {/* axis labels */}
+        <text x={0} y={H + 16} fontSize="10" fill="#64748b">{fmtTime(firstMs)}</text>
+        <text x={W} y={H + 16} textAnchor="end" fontSize="10" fill="#64748b">{fmtTime(lastMs)}</text>
+      </svg>
+    </div>
+  );
+}
+
+// ── StatBar (기존) ─────────────────────────────────────────────────────────────
+
+function StatBar({
+  label,
+  emoji,
+  count,
+  total,
+  color,
+}: {
+  label: string;
+  emoji: string;
+  count: number;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-20 text-sm font-medium">
+        {emoji} {label}
+      </span>
+      <div className="flex-1 h-8 rounded-full bg-border/50 overflow-hidden">
+        <div
+          className={`h-full ${color} rounded-full transition-all duration-500`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="w-16 text-right text-sm font-bold tabular-nums">
+        {count}명 ({pct}%)
+      </span>
+    </div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function DashboardPage({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}) {
+  const { code } = use(params);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionName, setSessionName] = useState("");
+  const [stats, setStats] = useState<Stats>({ understood: 0, confused: 0, lost: 0 });
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [clustering, setClustering] = useState(false);
+  const [isActive, setIsActive] = useState(true);
+  const [error, setError] = useState("");
+  const lastHistoryRef = useRef<number>(0);
+
+  const pushHistory = useCallback((s: Stats) => {
+    const now = Date.now();
+    // 최소 30초 간격으로만 히스토리 기록
+    if (now - lastHistoryRef.current < 30_000) return;
+    lastHistoryRef.current = now;
+    setHistory((prev) => {
+      const next = [...prev, { t: now, ...s }];
+      return next.length > HISTORY_MAX ? next.slice(next.length - HISTORY_MAX) : next;
+    });
+  }, []);
+
+  const fetchStats = useCallback(
+    async (sid: string) => {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+      const { data } = await supabase
+        .from("responses")
+        .select("student_id, type, created_at")
+        .eq("session_id", sid)
+        .gte("created_at", fiveMinAgo)
+        .order("created_at", { ascending: false });
+
+      if (!data) return;
+
+      const latestByStudent = new Map<string, ResponseType>();
+      for (const row of data) {
+        if (!latestByStudent.has(row.student_id)) {
+          latestByStudent.set(row.student_id, row.type);
+        }
+      }
+
+      const counts: Stats = { understood: 0, confused: 0, lost: 0 };
+      for (const type of latestByStudent.values()) {
+        counts[type]++;
+      }
+      setStats(counts);
+      pushHistory(counts);
+    },
+    [pushHistory]
+  );
+
+  const fetchQuestions = useCallback(async (sid: string) => {
+    const { data } = await supabase
+      .from("questions")
+      .select("id, text, cluster_id, created_at")
+      .eq("session_id", sid)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (data) setQuestions(data);
+  }, []);
+
+  const handleCluster = async () => {
+    if (!sessionId || clustering) return;
+    setClustering(true);
+    await fetch("/api/cluster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
+    await fetchQuestions(sessionId);
+    setClustering(false);
+  };
+
+  const handleEndSession = async () => {
+    if (!sessionId) return;
+    await supabase
+      .from("sessions")
+      .update({ is_active: false })
+      .eq("id", sessionId);
+    setIsActive(false);
+  };
+
+  useEffect(() => {
+    async function loadSession() {
+      const { data } = await supabase
+        .from("sessions")
+        .select("id, name, is_active")
+        .eq("code", code)
+        .single();
+
+      if (data) {
+        setSessionId(data.id);
+        setSessionName(data.name);
+        setIsActive(data.is_active);
+        fetchStats(data.id);
+        fetchQuestions(data.id);
+      } else {
+        setError("존재하지 않는 수업입니다.");
+      }
+    }
+    loadSession();
+  }, [code, fetchStats, fetchQuestions]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase
+      .channel(`responses-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "responses",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => {
+          fetchStats(sessionId);
+        }
+      )
+      .subscribe();
+
+    const qChannel = supabase
+      .channel(`questions-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "questions",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => {
+          fetchQuestions(sessionId);
+        }
+      )
+      .subscribe();
+
+    const interval = setInterval(() => fetchStats(sessionId), 30000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(qChannel);
+      clearInterval(interval);
+    };
+  }, [sessionId, fetchStats, fetchQuestions]);
+
+  const total = stats.understood + stats.confused + stats.lost;
+
+  if (error) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <p className="mb-4 text-lg text-danger">{error}</p>
+        <Link href="/" className="text-primary hover:underline">
+          홈으로 돌아가기
+        </Link>
+      </div>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <p className="text-muted">수업 연결 중...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col px-4 pt-8 pb-12">
+      <div className="mx-auto w-full max-w-2xl">
+        {/* 헤더 */}
+        <div className="mb-8 flex items-center justify-between">
+          <Link href="/" className="text-sm text-muted hover:text-foreground">
+            ← 종료
+          </Link>
+          <h1 className="text-lg font-bold">{sessionName}</h1>
+          <div className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-mono font-bold text-primary">
+            {code}
+          </div>
+        </div>
+
+        {/* 참여 현황 */}
+        <div className="mb-4 rounded-2xl border border-border bg-card p-6">
+          <div className="mb-1 text-sm text-muted">최근 5분 참여</div>
+          <div className="text-3xl font-bold">
+            {total}
+            <span className="ml-1 text-base font-normal text-muted">명</span>
+          </div>
+        </div>
+
+        {/* 도넛 차트 */}
+        <div className="mb-4 rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">
+            이해도 분포
+          </h2>
+          {total === 0 ? (
+            <p className="py-8 text-center text-muted text-sm">
+              아직 응답이 없습니다. 학생들이 참여하면 여기에 표시됩니다.
+            </p>
+          ) : (
+            <DonutChart stats={stats} />
+          )}
+        </div>
+
+        {/* 막대 상세 */}
+        {total > 0 && (
+          <div className="mb-4 rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">
+              실시간 이해도
+            </h2>
+            <div className="flex flex-col gap-4">
+              <StatBar label="이해됨" emoji="✅" count={stats.understood} total={total} color="bg-success" />
+              <StatBar label="헷갈림" emoji="🤔" count={stats.confused}   total={total} color="bg-warning" />
+              <StatBar label="모르겠음" emoji="❌" count={stats.lost}       total={total} color="bg-danger"  />
+            </div>
+          </div>
+        )}
+
+        {/* 추이 차트 */}
+        <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-3 text-sm font-semibold text-muted uppercase tracking-wide">
+            이해도 추이
+          </h2>
+          <div className="mb-2 flex gap-3 text-xs text-muted">
+            <span><span className="inline-block w-2 h-2 rounded-full bg-success mr-1" />이해됨</span>
+            <span><span className="inline-block w-2 h-2 rounded-full bg-warning mr-1" />헷갈림</span>
+            <span><span className="inline-block w-2 h-2 rounded-full bg-danger mr-1" />모르겠음</span>
+          </div>
+          <HistoryChart history={history} />
+        </div>
+
+        {/* 질문 패널 */}
+        <QuestionsPanel
+          questions={questions}
+          clustering={clustering}
+          onCluster={handleCluster}
+        />
+
+        {/* 수업 종료 / 리포트 */}
+        <div className="mb-6 flex gap-3">
+          {isActive ? (
+            <button
+              onClick={handleEndSession}
+              className="flex-1 rounded-xl border-2 border-danger px-4 py-3 text-sm font-semibold text-danger transition-colors hover:bg-danger/5"
+            >
+              수업 종료하기
+            </button>
+          ) : (
+            <div className="flex-1 rounded-xl bg-muted/10 px-4 py-3 text-center text-sm text-muted">
+              수업이 종료되었습니다
+            </div>
+          )}
+          <Link
+            href={`/session/${code}/report`}
+            className="flex-1 rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            📊 리포트 보기
+          </Link>
+        </div>
+
+        {/* 수업 코드 공유 */}
+        {isActive && (
+          <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+            <p className="mb-2 text-sm text-muted">학생들에게 아래 코드를 공유하세요</p>
+            <p className="text-4xl font-mono font-bold tracking-widest text-primary">{code}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── QuestionsPanel ────────────────────────────────────────────────────────────
+
+const CLUSTER_COLORS = [
+  "bg-blue-100 text-blue-800",
+  "bg-purple-100 text-purple-800",
+  "bg-pink-100 text-pink-800",
+  "bg-teal-100 text-teal-800",
+  "bg-orange-100 text-orange-800",
+  "bg-cyan-100 text-cyan-800",
+];
+
+function QuestionsPanel({
+  questions,
+  clustering,
+  onCluster,
+}: {
+  questions: Question[];
+  clustering: boolean;
+  onCluster: () => void;
+}) {
+  const unclustered = questions.filter((q) => q.cluster_id === null);
+  const clustered = questions.filter((q) => q.cluster_id !== null);
+
+  // 군집별 그룹
+  const groups = useMemo(() => {
+    const map = new Map<number, Question[]>();
+    for (const q of clustered) {
+      const arr = map.get(q.cluster_id!) ?? [];
+      arr.push(q);
+      map.set(q.cluster_id!, arr);
+    }
+    // 질문 수 많은 군집이 위로
+    return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
+  }, [clustered]);
+
+  return (
+    <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
+          학생 질문 ({questions.length})
+        </h2>
+        {unclustered.length >= 2 && (
+          <button
+            onClick={onCluster}
+            disabled={clustering}
+            className="rounded-lg bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+          >
+            {clustering ? "분석 중..." : "🤖 질문 군집화"}
+          </button>
+        )}
+      </div>
+
+      {questions.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted">
+          아직 질문이 없습니다.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {/* 군집된 질문 */}
+          {groups.map(([clusterId, qs], gi) => (
+            <div key={clusterId} className="rounded-xl bg-background p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${CLUSTER_COLORS[gi % CLUSTER_COLORS.length]}`}
+                >
+                  그룹 {gi + 1}
+                </span>
+                <span className="text-xs text-muted">{qs.length}명이 비슷한 질문</span>
+              </div>
+              <ul className="flex flex-col gap-1.5">
+                {qs.map((q) => (
+                  <li key={q.id} className="text-sm text-foreground">
+                    &ldquo;{q.text}&rdquo;
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          {/* 미군집 질문 */}
+          {unclustered.length > 0 && (
+            <div>
+              {groups.length > 0 && (
+                <p className="mb-2 text-xs text-muted">미분류</p>
+              )}
+              <ul className="flex flex-col gap-2">
+                {unclustered.map((q) => (
+                  <li
+                    key={q.id}
+                    className="rounded-lg bg-background px-4 py-2.5 text-sm text-foreground"
+                  >
+                    &ldquo;{q.text}&rdquo;
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
