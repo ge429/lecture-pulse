@@ -172,6 +172,7 @@ export default function DashboardPage({
   const [questions, setQuestions] = useState<Question[]>([]);
   const [clustering, setClustering] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const fetchStats = useCallback(
@@ -286,6 +287,8 @@ export default function DashboardPage({
         },
         () => {
           fetchQuestions(sessionId);
+          setToast("💬 새로운 질문이 들어왔습니다!");
+          setTimeout(() => setToast(null), 3000);
         }
       )
       .subscribe();
@@ -322,6 +325,13 @@ export default function DashboardPage({
 
   return (
     <div className="flex flex-1 flex-col px-4 pt-8 pb-12">
+      {/* 토스트 알림 */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 animate-[fadeInDown_0.3s_ease-out] rounded-xl border border-primary/20 bg-card px-5 py-3 shadow-lg">
+          <p className="text-sm font-medium text-foreground">{toast}</p>
+        </div>
+      )}
+
       <div className="mx-auto w-full max-w-2xl">
         {/* 헤더 */}
         <div className="mb-8 flex items-center justify-between">
