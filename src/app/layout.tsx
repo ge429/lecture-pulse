@@ -10,6 +10,19 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Lecture Pulse",
   description: "실시간 수업 이해도 피드백 서비스",
+  manifest: "/manifest.json",
+  themeColor: "#6366f1",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Lecture Pulse",
+  },
 };
 
 export default function RootLayout({

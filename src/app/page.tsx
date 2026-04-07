@@ -26,6 +26,13 @@ export default function Home() {
             🙋 학생으로 참여하기
           </Link>
         </div>
+
+        <Link
+          href="/sessions"
+          className="mt-6 text-sm text-muted hover:text-foreground"
+        >
+          📋 수업 히스토리 보기
+        </Link>
       </div>
     </div>
   );

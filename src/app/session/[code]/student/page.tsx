@@ -178,7 +178,7 @@ export default function StudentPage({
               key={signal.id}
               onClick={() => handleSignal(signal.id)}
               disabled={selected !== null}
-              className={`flex items-center gap-4 rounded-2xl ${signal.color} px-6 py-5 text-white transition-all ${signal.hoverColor} disabled:opacity-70 ${
+              className={`flex items-center gap-4 rounded-2xl ${signal.color} px-6 py-6 min-h-[72px] text-white transition-all active:scale-[0.97] ${signal.hoverColor} disabled:opacity-70 ${
                 selected === signal.id
                   ? `ring-4 ${signal.ringColor} scale-[0.98]`
                   : ""
