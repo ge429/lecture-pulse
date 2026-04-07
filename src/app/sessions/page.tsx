@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/format";
@@ -14,6 +15,9 @@ interface Session {
 }
 
 export default function SessionsPage() {
+  const searchParams = useSearchParams();
+  const isProfessor = searchParams.get("role") === "professor";
+
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -40,15 +44,11 @@ export default function SessionsPage() {
     setDeleting(null);
   }
 
-
   return (
     <div className="flex flex-1 flex-col px-4 py-8">
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-8 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-sm text-muted hover:text-foreground"
-          >
+          <Link href="/" className="text-sm text-muted hover:text-foreground">
             ← 홈으로
           </Link>
           <h1 className="text-lg font-bold">수업 히스토리</h1>
@@ -60,10 +60,7 @@ export default function SessionsPage() {
         ) : sessions.length === 0 ? (
           <div className="py-12 text-center">
             <p className="mb-4 text-muted">아직 생성된 수업이 없습니다.</p>
-            <Link
-              href="/session/create"
-              className="text-primary hover:underline"
-            >
+            <Link href="/session/create" className="text-primary hover:underline">
               수업 만들기
             </Link>
           </div>
@@ -91,7 +88,7 @@ export default function SessionsPage() {
                   <span>{formatDate(s.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {s.is_active && (
+                  {isProfessor && s.is_active && (
                     <Link
                       href={`/session/${s.code}/dashboard`}
                       className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover"
@@ -105,13 +102,15 @@ export default function SessionsPage() {
                   >
                     리포트
                   </Link>
-                  <button
-                    onClick={() => handleDelete(s.id)}
-                    disabled={deleting === s.id}
-                    className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
-                  >
-                    {deleting === s.id ? "삭제 중..." : "삭제"}
-                  </button>
+                  {isProfessor && (
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      disabled={deleting === s.id}
+                      className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
+                    >
+                      {deleting === s.id ? "삭제 중..." : "삭제"}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
