@@ -13,6 +13,7 @@ interface Material {
 export default function MaterialViewer({ sessionId }: { sessionId: string }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [openPdf, setOpenPdf] = useState<string | null>(null);
+  const [openSummary, setOpenSummary] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,17 +70,34 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
               >
                 새 탭
               </a>
-              {!m.summary && (
+            </div>
+
+            {/* 버튼 영역 */}
+            <div className="mt-2 flex gap-2">
+              {!m.summary && !summarizing && (
                 <button
                   onClick={() => handleSummarize(m.id)}
-                  disabled={summarizing === m.id}
-                  className="ml-auto rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover"
                 >
-                  {summarizing === m.id ? "요약 중 (최대 30초)..." : "🤖 AI 요약"}
+                  🤖 AI 요약
+                </button>
+              )}
+              {summarizing === m.id && (
+                <span className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+                  요약 중 (최대 30초)...
+                </span>
+              )}
+              {m.summary && (
+                <button
+                  onClick={() => setOpenSummary(openSummary === m.id ? null : m.id)}
+                  className="rounded-lg bg-success/15 px-3 py-1.5 text-xs font-semibold text-success hover:bg-success/25"
+                >
+                  {openSummary === m.id ? "요약 닫기" : "✅ 요약 보기"}
                 </button>
               )}
             </div>
 
+            {/* PDF 뷰어 */}
             {openPdf === m.id && (
               <div className="mt-3 overflow-hidden rounded-lg border border-border">
                 <iframe
@@ -90,12 +108,10 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
               </div>
             )}
 
-            {m.summary && (
-              <div className="mt-3">
-                <p className="mb-1 text-xs font-semibold text-primary">🤖 AI 요약</p>
-                <div className="whitespace-pre-wrap rounded-lg bg-primary/5 p-3 text-sm leading-relaxed text-foreground">
-                  {m.summary}
-                </div>
+            {/* 요약 (토글) */}
+            {openSummary === m.id && m.summary && (
+              <div className="mt-3 whitespace-pre-wrap rounded-lg bg-primary/5 p-4 text-sm leading-relaxed text-foreground">
+                {m.summary}
               </div>
             )}
           </div>
