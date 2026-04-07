@@ -15,7 +15,7 @@ async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
-        "anthropic-version": "2025-04-01",
+        "anthropic-version": "2024-10-22",
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6-20260401",
