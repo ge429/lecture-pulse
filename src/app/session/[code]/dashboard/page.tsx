@@ -46,11 +46,8 @@ export default function DashboardPage({
       .eq("session_id", sessionId)
       .order("created_at", { ascending: false });
 
-    // 진행 중이면 최근 5분, 종료되었으면 전체 데이터
-    if (active) {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      query = query.gte("created_at", fiveMinAgo);
-    }
+    // 종료된 수업이 아니면 전체 데이터 표시 (중간에 재접속해도 이전 데이터 보임)
+    // active인 경우에도 전체 데이터를 보여줌
 
     const { data } = await query;
     if (!data) return;
@@ -277,7 +274,7 @@ export default function DashboardPage({
         </div>
 
         <div className="mb-4 rounded-2xl border border-border bg-card p-6">
-          <div className="mb-1 text-sm text-muted">{isActive ? "최근 5분 참여" : "총 참여"}</div>
+          <div className="mb-1 text-sm text-muted">참여 현황</div>
           <div className="text-3xl font-bold">
             {total}<span className="ml-1 text-base font-normal text-muted">명</span>
           </div>
