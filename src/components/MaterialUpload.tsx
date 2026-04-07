@@ -20,6 +20,7 @@ export default function MaterialUpload({
   onUploaded: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,6 +58,20 @@ export default function MaterialUpload({
   };
 
 
+  const handleDelete = async (id: string, fileUrl: string) => {
+    if (deleting) return;
+    setDeleting(id);
+    // Storage에서 파일 삭제
+    const path = fileUrl.split("/materials/")[1];
+    if (path) {
+      await supabase.storage.from("materials").remove([decodeURIComponent(path)]);
+    }
+    // DB에서 삭제
+    await supabase.from("materials").delete().eq("id", id);
+    setDeleting(null);
+    onUploaded();
+  };
+
   return (
     <div className="mb-4 rounded-2xl border border-border bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
@@ -93,6 +108,13 @@ export default function MaterialUpload({
                 >
                   📄 {m.file_name}
                 </a>
+                <button
+                  onClick={() => handleDelete(m.id, m.file_url)}
+                  disabled={deleting === m.id}
+                  className="rounded-lg px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
+                >
+                  {deleting === m.id ? "..." : "삭제"}
+                </button>
               </div>
             </div>
           ))}
