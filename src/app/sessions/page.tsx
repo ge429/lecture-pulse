@@ -110,15 +110,13 @@ function SessionsContent() {
                   >
                     리포트
                   </Link>
-                  {isProfessor && (
-                    <button
-                      onClick={() => handleDelete(s.id)}
-                      disabled={deleting === s.id}
-                      className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
-                    >
-                      {deleting === s.id ? "삭제 중..." : "삭제"}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    disabled={deleting === s.id}
+                    className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
+                  >
+                    {deleting === s.id ? "삭제 중..." : "삭제"}
+                  </button>
                 </div>
               </div>
             ))}
