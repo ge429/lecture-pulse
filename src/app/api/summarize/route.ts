@@ -3,9 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export const maxDuration = 60;
 
-// ── PDF를 직접 Claude에 전송하여 요약 ──────────────────────────────────────────
-
-async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null; error?: string }> {
+async function summarizePdf(fileUrl: string): Promise<{ summary: string | null; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { summary: null, error: "ANTHROPIC_API_KEY가 설정되지 않았습니다." };
 
@@ -15,7 +13,7 @@ async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
-        "anthropic-version": "2024-10-22",
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6-20260401",
@@ -27,9 +25,8 @@ async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null
               {
                 type: "document",
                 source: {
-                  type: "base64",
-                  media_type: "application/pdf",
-                  data: pdfBase64,
+                  type: "url",
+                  url: fileUrl,
                 },
               },
               {
@@ -62,8 +59,6 @@ async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null
   }
 }
 
-// ── POST handler ──────────────────────────────────────────────────────────────
-
 export async function POST(req: NextRequest) {
   const { materialId } = await req.json();
   if (!materialId) {
@@ -84,26 +79,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ summary: material.summary });
   }
 
-  // PDF 다운로드
-  const pdfRes = await fetch(material.file_url);
-  if (!pdfRes.ok) {
-    return NextResponse.json({ error: "PDF download failed" }, { status: 500 });
-  }
-
-  const buffer = Buffer.from(await pdfRes.arrayBuffer());
-  const pdfBase64 = buffer.toString("base64");
-
-  // Claude에 PDF 직접 전송
-  const result = await summarizePdf(pdfBase64);
+  const result = await summarizePdf(material.file_url);
   if (!result.summary) {
     return NextResponse.json({ error: result.error || "요약 생성에 실패했습니다." }, { status: 500 });
   }
-  const summary = result.summary;
 
   await supabase
     .from("materials")
-    .update({ summary })
+    .update({ summary: result.summary })
     .eq("id", materialId);
 
-  return NextResponse.json({ summary });
+  return NextResponse.json({ summary: result.summary });
 }
