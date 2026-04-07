@@ -88,6 +88,13 @@ export default function CreateSession() {
             {isCreating ? "생성 중..." : "수업 시작하기"}
           </button>
         </form>
+
+        <Link
+          href="/sessions?role=professor"
+          className="mt-6 inline-block text-sm text-muted hover:text-foreground"
+        >
+          📋 수업 히스토리 보기
+        </Link>
       </div>
     </div>
   );

@@ -81,6 +81,13 @@ export default function JoinSession() {
             {isJoining ? "참여 중..." : "수업 참여하기"}
           </button>
         </form>
+
+        <Link
+          href="/sessions"
+          className="mt-6 inline-block text-sm text-muted hover:text-foreground"
+        >
+          📋 수업 히스토리 보기
+        </Link>
       </div>
     </div>
   );

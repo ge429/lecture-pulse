@@ -27,20 +27,6 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-6 flex gap-4">
-          <Link
-            href="/sessions?role=professor"
-            className="text-sm text-muted hover:text-foreground"
-          >
-            📋 교수 히스토리
-          </Link>
-          <Link
-            href="/sessions"
-            className="text-sm text-muted hover:text-foreground"
-          >
-            📋 학생 히스토리
-          </Link>
-        </div>
       </div>
     </div>
   );
