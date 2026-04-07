@@ -58,8 +58,8 @@ async function summarizeImages(images: string[]): Promise<string | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  // 최대 10페이지만 (API 비용/시간 제한)
-  const selected = images.slice(0, 10);
+  // 최대 5페이지만 (Vercel 타임아웃 대응)
+  const selected = images.slice(0, 5);
 
   const content: { type: string; source?: { type: string; media_type: string; data: string }; text?: string }[] = [];
 
@@ -119,7 +119,7 @@ async function pdfToImages(buffer: Buffer): Promise<string[]> {
   try {
     const { pdf } = await import("pdf-to-img");
     const images: string[] = [];
-    const doc = await pdf(buffer, { scale: 1.5 });
+    const doc = await pdf(buffer, { scale: 1.0 });
     for await (const page of doc) {
       images.push(Buffer.from(page).toString("base64"));
     }
@@ -129,6 +129,9 @@ async function pdfToImages(buffer: Buffer): Promise<string[]> {
     return [];
   }
 }
+
+// Vercel 무료 플랜 최대 실행 시간
+export const maxDuration = 60;
 
 // ── POST handler ──────────────────────────────────────────────────────────────
 

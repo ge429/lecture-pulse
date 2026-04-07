@@ -75,7 +75,7 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
                   disabled={summarizing === m.id}
                   className="ml-auto rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                 >
-                  {summarizing === m.id ? "요약 중..." : "🤖 AI 요약"}
+                  {summarizing === m.id ? "요약 중 (최대 30초)..." : "🤖 AI 요약"}
                 </button>
               )}
             </div>
