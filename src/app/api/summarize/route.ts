@@ -1,67 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse");
 
-// ── 텍스트 기반 요약 ──────────────────────────────────────────────────────────
+export const maxDuration = 60;
 
-async function summarizeText(text: string): Promise<string | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
-  const truncated = text.slice(0, 15000);
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 2048,
-        messages: [
-          {
-            role: "user",
-            content: `아래는 대학 수업 자료(PDF)의 텍스트입니다. 학생이 이해하기 쉽도록 한국어로 요약해주세요.
-
-포함할 내용:
-1. 핵심 주제 (한 줄)
-2. 주요 개념 정리 (3~5개 bullet point)
-3. 꼭 기억해야 할 포인트
-
-텍스트:
-${truncated}`,
-          },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      console.error("Summarize text API failed:", res.status);
-      return null;
-    }
-
-    const data = await res.json();
-    return data.content?.[0]?.text ?? null;
-  } catch (err) {
-    console.error("Summarize text error:", err);
-    return null;
-  }
-}
-
-// ── 이미지 기반 요약 (Vision API) ─────────────────────────────────────────────
+// ── Vision API로 요약 ─────────────────────────────────────────────────────────
 
 async function summarizeImages(images: string[]): Promise<string | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  // 최대 5페이지만 (Vercel 타임아웃 대응)
   const selected = images.slice(0, 5);
 
-  const content: { type: string; source?: { type: string; media_type: string; data: string }; text?: string }[] = [];
+  const content: Record<string, unknown>[] = [];
 
   for (const img of selected) {
     content.push({
@@ -76,7 +26,7 @@ async function summarizeImages(images: string[]): Promise<string | null> {
 
   content.push({
     type: "text",
-    text: `위 이미지들은 대학 수업 자료(슬라이드)입니다. 학생이 이해하기 쉽도록 한국어로 요약해주세요.
+    text: `위 이미지들은 대학 수업 자료(슬라이드/문서)입니다. 학생이 이해하기 쉽도록 한국어로 요약해주세요.
 
 포함할 내용:
 1. 핵심 주제 (한 줄)
@@ -101,14 +51,15 @@ async function summarizeImages(images: string[]): Promise<string | null> {
     });
 
     if (!res.ok) {
-      console.error("Summarize vision API failed:", res.status, await res.text());
+      const errText = await res.text();
+      console.error("Vision API failed:", res.status, errText);
       return null;
     }
 
     const data = await res.json();
     return data.content?.[0]?.text ?? null;
   } catch (err) {
-    console.error("Summarize vision error:", err);
+    console.error("Vision API error:", err);
     return null;
   }
 }
@@ -122,6 +73,7 @@ async function pdfToImages(buffer: Buffer): Promise<string[]> {
     const doc = await pdf(buffer, { scale: 1.0 });
     for await (const page of doc) {
       images.push(Buffer.from(page).toString("base64"));
+      if (images.length >= 5) break;
     }
     return images;
   } catch (err) {
@@ -129,9 +81,6 @@ async function pdfToImages(buffer: Buffer): Promise<string[]> {
     return [];
   }
 }
-
-// Vercel 무료 플랜 최대 실행 시간
-export const maxDuration = 60;
 
 // ── POST handler ──────────────────────────────────────────────────────────────
 
@@ -162,35 +111,18 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await pdfRes.arrayBuffer());
-  let summary: string | null = null;
 
-  // 1차: 텍스트 추출 시도
-  try {
-    const parsed = await pdfParse(buffer);
-    const text = parsed.text?.trim() ?? "";
-
-    if (text.length > 200) {
-      // 텍스트가 충분하면 텍스트 기반 요약
-      summary = await summarizeText(text);
-    }
-  } catch {
-    // 텍스트 추출 실패 → 이미지로 진행
+  // PDF → 이미지 → Vision API
+  const images = await pdfToImages(buffer);
+  if (images.length === 0) {
+    return NextResponse.json({ error: "PDF를 처리할 수 없습니다." }, { status: 500 });
   }
 
-  // 2차: 텍스트가 없거나 부족하면 이미지 기반 요약
+  const summary = await summarizeImages(images);
   if (!summary) {
-    const images = await pdfToImages(buffer);
-    if (images.length === 0) {
-      return NextResponse.json({ error: "PDF를 처리할 수 없습니다." }, { status: 500 });
-    }
-    summary = await summarizeImages(images);
+    return NextResponse.json({ error: "요약 생성에 실패했습니다. ANTHROPIC_API_KEY를 확인해주세요." }, { status: 500 });
   }
 
-  if (!summary) {
-    return NextResponse.json({ error: "요약 생성에 실패했습니다." }, { status: 500 });
-  }
-
-  // DB에 요약 저장
   await supabase
     .from("materials")
     .update({ summary })
