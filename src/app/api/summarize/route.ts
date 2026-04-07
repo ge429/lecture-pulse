@@ -56,6 +56,9 @@ async function summarizePdf(fileUrl: string): Promise<{ summary: string | null; 
 💡 꼭 기억할 것
 시험에 나올 만한 핵심 포인트 2~3개. 한 줄씩.
 
+📝 과제/할 일 (있는 경우만)
+과제 내용, 마감일, 제출 방법 등을 빠짐없이 정리.
+
 🔧 수식/다이어그램 (있는 경우만)
 주요 수식이나 도표가 뜻하는 바를 쉽게 풀어서.`,
               },
