@@ -18,7 +18,7 @@ async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null
         "anthropic-version": "2025-04-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6-20260401",
         max_tokens: 2048,
         messages: [
           {
