@@ -142,6 +142,14 @@ function SessionsContent() {
                       대시보드
                     </Link>
                   )}
+                  {!isProfessor && s.is_active && (
+                    <Link
+                      href={`/session/${s.code}/student`}
+                      className="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90"
+                    >
+                      다시 참여
+                    </Link>
+                  )}
                   <Link
                     href={`/session/${s.code}/report`}
                     className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-background"
