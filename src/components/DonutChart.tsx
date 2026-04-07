@@ -73,10 +73,10 @@ export default function DonutChart({ stats }: { stats: Stats }) {
             ) : null
           )
         )}
-        <text x={cx} y={cy - 6} textAnchor="middle" fontSize="22" fontWeight="700" fill="#0f172a">
+        <text x={cx} y={cy - 6} textAnchor="middle" fontSize="22" fontWeight="700" fill="var(--foreground)">
           {total > 0 ? `${confusionPct}%` : "—"}
         </text>
-        <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#64748b">
+        <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="var(--muted)">
           혼란도
         </text>
       </svg>

@@ -13,6 +13,19 @@
   --border: #e2e8f0;
 }
 
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --primary: #818cf8;
+  --primary-hover: #6366f1;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --card: #1e293b;
+  --muted: #94a3b8;
+  --border: #334155;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
