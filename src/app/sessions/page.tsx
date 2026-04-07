@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +15,14 @@ interface Session {
 }
 
 export default function SessionsPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center"><p className="text-muted">불러오는 중...</p></div>}>
+      <SessionsContent />
+    </Suspense>
+  );
+}
+
+function SessionsContent() {
   const searchParams = useSearchParams();
   const isProfessor = searchParams.get("role") === "professor";
 
