@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { formatDate } from "@/lib/format";
 
 interface ReportData {
   session: {
@@ -142,8 +143,7 @@ export default function ReportPage({
         )
       : 0;
 
-  const createdDate = new Date(report.session.createdAt);
-  const dateStr = `${createdDate.getFullYear()}.${(createdDate.getMonth() + 1).toString().padStart(2, "0")}.${createdDate.getDate().toString().padStart(2, "0")}`;
+  const dateStr = formatDate(report.session.createdAt).split(" ")[0];
 
   return (
     <div className="flex flex-1 flex-col px-4 py-8">
