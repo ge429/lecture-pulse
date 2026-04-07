@@ -5,9 +5,9 @@ export const maxDuration = 60;
 
 // ── PDF를 직접 Claude에 전송하여 요약 ──────────────────────────────────────────
 
-async function summarizePdf(pdfBase64: string): Promise<string | null> {
+async function summarizePdf(pdfBase64: string): Promise<{ summary: string | null; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { summary: null, error: "ANTHROPIC_API_KEY가 설정되지 않았습니다." };
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -15,7 +15,7 @@ async function summarizePdf(pdfBase64: string): Promise<string | null> {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        "anthropic-version": "2025-04-01",
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
@@ -51,14 +51,14 @@ async function summarizePdf(pdfBase64: string): Promise<string | null> {
     if (!res.ok) {
       const errText = await res.text();
       console.error("Claude API failed:", res.status, errText);
-      return null;
+      return { summary: null, error: `Claude API 오류 (${res.status}): ${errText.slice(0, 200)}` };
     }
 
     const data = await res.json();
-    return data.content?.[0]?.text ?? null;
+    return { summary: data.content?.[0]?.text ?? null };
   } catch (err) {
     console.error("Claude API error:", err);
-    return null;
+    return { summary: null, error: `API 호출 실패: ${String(err).slice(0, 200)}` };
   }
 }
 
@@ -94,10 +94,11 @@ export async function POST(req: NextRequest) {
   const pdfBase64 = buffer.toString("base64");
 
   // Claude에 PDF 직접 전송
-  const summary = await summarizePdf(pdfBase64);
-  if (!summary) {
-    return NextResponse.json({ error: "요약 생성에 실패했습니다." }, { status: 500 });
+  const result = await summarizePdf(pdfBase64);
+  if (!result.summary) {
+    return NextResponse.json({ error: result.error || "요약 생성에 실패했습니다." }, { status: 500 });
   }
+  const summary = result.summary;
 
   await supabase
     .from("materials")
