@@ -16,7 +16,7 @@ async function generateAISummary(context: string): Promise<string | null> {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6-20260401",
+        model: "claude-sonnet-4-5-20241022",
         max_tokens: 1024,
         messages: [
           {

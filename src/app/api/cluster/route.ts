@@ -120,7 +120,7 @@ ${questions.map((q, i) => `${i + 1}. [${q.id}] ${q.text}`).join("\n")}
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6-20260401",
+        model: "claude-sonnet-4-5-20241022",
         max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       }),
