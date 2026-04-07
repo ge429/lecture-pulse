@@ -9,6 +9,7 @@ import { SIGNALS } from "@/lib/constants";
 import type { ResponseType } from "@/lib/database.types";
 import ActivePoll from "@/components/ActivePoll";
 import QuestionInput from "@/components/QuestionInput";
+import MaterialViewer from "@/components/MaterialViewer";
 
 export default function StudentPage({
   params,
@@ -154,6 +155,7 @@ export default function StudentPage({
           </p>
         )}
 
+        <MaterialViewer sessionId={sessionId} />
         <ActivePoll sessionId={sessionId} />
         <QuestionInput sessionId={sessionId} />
       </div>

@@ -9,6 +9,7 @@ import DonutChart from "@/components/DonutChart";
 import StatBar from "@/components/StatBar";
 import QuestionsPanel from "@/components/QuestionsPanel";
 import PollPanel from "@/components/PollPanel";
+import MaterialUpload from "@/components/MaterialUpload";
 
 interface Stats {
   understood: number;
@@ -30,6 +31,7 @@ export default function DashboardPage({
   const [isActive, setIsActive] = useState(true);
   const [activePoll, setActivePoll] = useState<{ id: string; question: string; poll_type: string; options: string[]; is_open: boolean } | null>(null);
   const [pollResults, setPollResults] = useState<{ answer: string; count: number }[]>([]);
+  const [materials, setMaterials] = useState<{ id: string; file_name: string; file_url: string; summary: string | null }[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -61,6 +63,15 @@ export default function DashboardPage({
       counts[type]++;
     }
     setStats(counts);
+  }, []);
+
+  const fetchMaterials = useCallback(async (sessionId: string) => {
+    const { data } = await supabase
+      .from("materials")
+      .select("id, file_name, file_url, summary")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false });
+    if (data) setMaterials(data);
   }, []);
 
   const fetchQuestions = useCallback(async (sessionId: string) => {
@@ -160,6 +171,7 @@ export default function DashboardPage({
       setIsActive(data.is_active);
       fetchStats(data.id);
       fetchQuestions(data.id);
+      fetchMaterials(data.id);
 
       const { data: poll } = await supabase
         .from("polls")
@@ -285,6 +297,14 @@ export default function DashboardPage({
               <StatBar label="모르겠음" emoji="❌" count={stats.lost} total={total} color="bg-danger" />
             </div>
           </div>
+        )}
+
+        {isActive && sessionId && (
+          <MaterialUpload
+            sessionId={sessionId}
+            materials={materials}
+            onUploaded={() => fetchMaterials(sessionId)}
+          />
         )}
 
         {isActive && (
