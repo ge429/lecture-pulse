@@ -15,6 +15,7 @@ interface Session {
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -29,6 +30,14 @@ export default function SessionsPage() {
     }
     load();
   }, []);
+
+  async function handleDelete(id: string) {
+    if (deleting) return;
+    setDeleting(id);
+    await supabase.from("sessions").delete().eq("id", id);
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+    setDeleting(null);
+  }
 
   function formatDate(iso: string) {
     const d = new Date(iso);
@@ -84,7 +93,7 @@ export default function SessionsPage() {
                   <span className="font-mono">{s.code}</span>
                   <span>{formatDate(s.created_at)}</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   {s.is_active && (
                     <Link
                       href={`/session/${s.code}/dashboard`}
@@ -99,6 +108,13 @@ export default function SessionsPage() {
                   >
                     리포트
                   </Link>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    disabled={deleting === s.id}
+                    className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
+                  >
+                    {deleting === s.id ? "삭제 중..." : "삭제"}
+                  </button>
                 </div>
               </div>
             ))}
