@@ -39,16 +39,20 @@ export default function DashboardPage({
 
   // ── 데이터 fetching ──────────────────────────────────────────────────────
 
-  const fetchStats = useCallback(async (sessionId: string) => {
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-
-    const { data } = await supabase
+  const fetchStats = useCallback(async (sessionId: string, active: boolean) => {
+    let query = supabase
       .from("responses")
       .select("student_id, type, created_at")
       .eq("session_id", sessionId)
-      .gte("created_at", fiveMinAgo)
       .order("created_at", { ascending: false });
 
+    // 진행 중이면 최근 5분, 종료되었으면 전체 데이터
+    if (active) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      query = query.gte("created_at", fiveMinAgo);
+    }
+
+    const { data } = await query;
     if (!data) return;
 
     const latestByStudent = new Map<string, ResponseType>();
@@ -169,7 +173,7 @@ export default function DashboardPage({
       setSessionId(data.id);
       setSessionName(data.name);
       setIsActive(data.is_active);
-      fetchStats(data.id);
+      fetchStats(data.id, data.is_active);
       fetchQuestions(data.id);
       fetchMaterials(data.id);
 
@@ -196,7 +200,7 @@ export default function DashboardPage({
 
     const responsesChannel = supabase
       .channel(`responses-${sessionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "responses", filter: `session_id=eq.${sessionId}` }, () => fetchStats(sessionId))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "responses", filter: `session_id=eq.${sessionId}` }, () => fetchStats(sessionId, isActive))
       .subscribe();
 
     const questionsChannel = supabase
@@ -207,7 +211,7 @@ export default function DashboardPage({
       })
       .subscribe();
 
-    const interval = setInterval(() => fetchStats(sessionId), 30000);
+    const interval = setInterval(() => fetchStats(sessionId, isActive), 30000);
 
     return () => {
       supabase.removeChannel(responsesChannel);
@@ -273,7 +277,7 @@ export default function DashboardPage({
         </div>
 
         <div className="mb-4 rounded-2xl border border-border bg-card p-6">
-          <div className="mb-1 text-sm text-muted">최근 5분 참여</div>
+          <div className="mb-1 text-sm text-muted">{isActive ? "최근 5분 참여" : "총 참여"}</div>
           <div className="text-3xl font-bold">
             {total}<span className="ml-1 text-base font-normal text-muted">명</span>
           </div>
