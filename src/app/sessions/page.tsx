@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getStudentId } from "@/lib/student";
 import { formatDate } from "@/lib/format";
 
 interface Session {
@@ -32,17 +33,42 @@ function SessionsContent() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from("sessions")
-        .select("id, code, name, created_at, is_active")
-        .order("created_at", { ascending: false })
-        .limit(50);
+      if (isProfessor) {
+        // 교수: 전체 세션 조회
+        const { data } = await supabase
+          .from("sessions")
+          .select("id, code, name, created_at, is_active")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (data) setSessions(data);
+      } else {
+        // 학생: 참여한 세션만 (responses 또는 questions에 기록이 있는 세션)
+        const studentId = getStudentId();
+        const [{ data: r }, { data: q }] = await Promise.all([
+          supabase.from("responses").select("session_id").eq("student_id", studentId),
+          supabase.from("questions").select("session_id").eq("student_id", studentId),
+        ]);
 
-      if (data) setSessions(data);
+        const sessionIds = [
+          ...new Set([
+            ...(r ?? []).map((row) => row.session_id),
+            ...(q ?? []).map((row) => row.session_id),
+          ]),
+        ];
+
+        if (sessionIds.length > 0) {
+          const { data } = await supabase
+            .from("sessions")
+            .select("id, code, name, created_at, is_active")
+            .in("id", sessionIds)
+            .order("created_at", { ascending: false });
+          if (data) setSessions(data);
+        }
+      }
       setLoading(false);
     }
     load();
-  }, []);
+  }, [isProfessor]);
 
   async function handleDelete(id: string) {
     if (deleting) return;
@@ -67,9 +93,14 @@ function SessionsContent() {
           <p className="py-12 text-center text-muted">불러오는 중...</p>
         ) : sessions.length === 0 ? (
           <div className="py-12 text-center">
-            <p className="mb-4 text-muted">아직 생성된 수업이 없습니다.</p>
-            <Link href="/session/create" className="text-primary hover:underline">
-              수업 만들기
+            <p className="mb-4 text-muted">
+              {isProfessor ? "아직 생성된 수업이 없습니다." : "참여한 수업이 없습니다."}
+            </p>
+            <Link
+              href={isProfessor ? "/session/create" : "/session/join"}
+              className="text-primary hover:underline"
+            >
+              {isProfessor ? "수업 만들기" : "수업 참여하기"}
             </Link>
           </div>
         ) : (
