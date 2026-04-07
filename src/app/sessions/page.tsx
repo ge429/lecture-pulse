@@ -28,13 +28,20 @@ function SessionsContent() {
   const isProfessor = searchParams.get("role") === "professor";
 
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const storageKey = isProfessor ? "lp-hidden-professor" : "lp-hidden-student";
 
   useEffect(() => {
+    // localStorage에서 숨긴 세션 목록 로드
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try { setHiddenIds(new Set(JSON.parse(saved))); } catch { /* ignore */ }
+    }
+
     async function load() {
       if (isProfessor) {
-        // 교수: 전체 세션 조회
         const { data } = await supabase
           .from("sessions")
           .select("id, code, name, created_at, is_active")
@@ -42,7 +49,6 @@ function SessionsContent() {
           .limit(50);
         if (data) setSessions(data);
       } else {
-        // 학생: 참여한 세션만 (responses 또는 questions에 기록이 있는 세션)
         const studentId = getStudentId();
         const [{ data: r }, { data: q }] = await Promise.all([
           supabase.from("responses").select("session_id").eq("student_id", studentId),
@@ -68,15 +74,16 @@ function SessionsContent() {
       setLoading(false);
     }
     load();
-  }, [isProfessor]);
+  }, [isProfessor, storageKey]);
 
-  async function handleDelete(id: string) {
-    if (deleting) return;
-    setDeleting(id);
-    await supabase.from("sessions").delete().eq("id", id);
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    setDeleting(null);
+  function handleHide(id: string) {
+    const next = new Set(hiddenIds);
+    next.add(id);
+    setHiddenIds(next);
+    localStorage.setItem(storageKey, JSON.stringify([...next]));
   }
+
+  const visibleSessions = sessions.filter((s) => !hiddenIds.has(s.id));
 
   return (
     <div className="flex flex-1 flex-col px-4 py-8">
@@ -91,7 +98,7 @@ function SessionsContent() {
 
         {loading ? (
           <p className="py-12 text-center text-muted">불러오는 중...</p>
-        ) : sessions.length === 0 ? (
+        ) : visibleSessions.length === 0 ? (
           <div className="py-12 text-center">
             <p className="mb-4 text-muted">
               {isProfessor ? "아직 생성된 수업이 없습니다." : "참여한 수업이 없습니다."}
@@ -105,7 +112,7 @@ function SessionsContent() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {sessions.map((s) => (
+            {visibleSessions.map((s) => (
               <div
                 key={s.id}
                 className="rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
@@ -142,11 +149,10 @@ function SessionsContent() {
                     리포트
                   </Link>
                   <button
-                    onClick={() => handleDelete(s.id)}
-                    disabled={deleting === s.id}
-                    className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
+                    onClick={() => handleHide(s.id)}
+                    className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5"
                   >
-                    {deleting === s.id ? "삭제 중..." : "삭제"}
+                    숨기기
                   </button>
                 </div>
               </div>
