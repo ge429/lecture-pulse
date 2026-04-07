@@ -36,7 +36,7 @@ export default function MaterialUpload({
       .upload(filePath, file, { contentType: "application/pdf" });
 
     if (uploadError) {
-      alert("파일 업로드에 실패했습니다.");
+      alert(`파일 업로드 실패: ${uploadError.message}`);
       setUploading(false);
       return;
     }
