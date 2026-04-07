@@ -20,7 +20,6 @@ export default function MaterialUpload({
   onUploaded: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [summarizing, setSummarizing] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,20 +56,6 @@ export default function MaterialUpload({
     onUploaded();
   };
 
-  const handleSummarize = async (materialId: string) => {
-    setSummarizing(materialId);
-    const res = await fetch("/api/summarize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ materialId }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      alert(data.error || "요약 생성 실패");
-    }
-    setSummarizing(null);
-    onUploaded();
-  };
 
   return (
     <div className="mb-4 rounded-2xl border border-border bg-card p-6">
@@ -108,21 +93,7 @@ export default function MaterialUpload({
                 >
                   📄 {m.file_name}
                 </a>
-                {!m.summary && (
-                  <button
-                    onClick={() => handleSummarize(m.id)}
-                    disabled={summarizing === m.id}
-                    className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
-                  >
-                    {summarizing === m.id ? "요약 중..." : "🤖 AI 요약"}
-                  </button>
-                )}
               </div>
-              {m.summary && (
-                <div className="mt-3 whitespace-pre-wrap rounded-lg bg-primary/5 p-3 text-sm leading-relaxed text-foreground">
-                  {m.summary}
-                </div>
-              )}
             </div>
           ))}
         </div>

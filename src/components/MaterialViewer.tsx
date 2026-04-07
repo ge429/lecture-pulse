@@ -13,6 +13,7 @@ interface Material {
 export default function MaterialViewer({ sessionId }: { sessionId: string }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [openPdf, setOpenPdf] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -25,6 +26,25 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
     }
     load();
   }, [sessionId]);
+
+  const handleSummarize = async (materialId: string) => {
+    setSummarizing(materialId);
+    const res = await fetch("/api/summarize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ materialId }),
+    });
+    if (res.ok) {
+      const { summary } = await res.json();
+      setMaterials((prev) =>
+        prev.map((m) => (m.id === materialId ? { ...m, summary } : m))
+      );
+    } else {
+      const data = await res.json();
+      alert(data.error || "요약 생성 실패");
+    }
+    setSummarizing(null);
+  };
 
   if (materials.length === 0) return null;
 
@@ -49,9 +69,17 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
               >
                 새 탭
               </a>
+              {!m.summary && (
+                <button
+                  onClick={() => handleSummarize(m.id)}
+                  disabled={summarizing === m.id}
+                  className="ml-auto rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+                >
+                  {summarizing === m.id ? "요약 중..." : "🤖 AI 요약"}
+                </button>
+              )}
             </div>
 
-            {/* PDF 뷰어 */}
             {openPdf === m.id && (
               <div className="mt-3 overflow-hidden rounded-lg border border-border">
                 <iframe
@@ -62,7 +90,6 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
               </div>
             )}
 
-            {/* AI 요약 */}
             {m.summary && (
               <div className="mt-3">
                 <p className="mb-1 text-xs font-semibold text-primary">🤖 AI 요약</p>
