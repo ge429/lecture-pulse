@@ -10,6 +10,7 @@ import StatBar from "@/components/StatBar";
 import QuestionsPanel from "@/components/QuestionsPanel";
 import PollPanel from "@/components/PollPanel";
 import MaterialUpload from "@/components/MaterialUpload";
+import { QRCodeSVG } from "qrcode.react";
 
 interface Stats {
   understood: number;
@@ -342,7 +343,15 @@ export default function DashboardPage({
 
         {isActive && (
           <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
-            <p className="mb-2 text-sm text-muted">학생들에게 아래 코드를 공유하세요</p>
+            <p className="mb-4 text-sm text-muted">학생들에게 QR코드를 보여주거나 코드를 공유하세요</p>
+            <div className="mb-4 flex justify-center">
+              <QRCodeSVG
+                value={`${typeof window !== "undefined" ? window.location.origin : ""}/session/${code}/student`}
+                size={160}
+                bgColor="transparent"
+                fgColor="#6366f1"
+              />
+            </div>
             <p className="text-4xl font-mono font-bold tracking-widest text-primary">{code}</p>
           </div>
         )}
