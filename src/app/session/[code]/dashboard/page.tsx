@@ -5,6 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { ResponseType } from "@/lib/database.types";
+import { POLL_INTERVAL, TOAST_DURATION, TOAST_FADE_OUT } from "@/lib/constants";
 import DonutChart from "@/components/DonutChart";
 import StatBar from "@/components/StatBar";
 import QuestionsPanel from "@/components/QuestionsPanel";
@@ -149,8 +150,8 @@ export default function DashboardPage({
     setToastVisible(true);
     toastTimer.current = setTimeout(() => {
       setToastVisible(false);
-      setTimeout(() => setToast(null), 400);
-    }, 2600);
+      setTimeout(() => setToast(null), TOAST_FADE_OUT);
+    }, TOAST_DURATION);
   };
 
   // ── 초기 로드 ────────────────────────────────────────────────────────────
@@ -209,7 +210,7 @@ export default function DashboardPage({
       })
       .subscribe();
 
-    const interval = setInterval(() => fetchStats(sessionId, isActive), 30000);
+    const interval = setInterval(() => fetchStats(sessionId, isActive), POLL_INTERVAL);
 
     return () => {
       supabase.removeChannel(responsesChannel);

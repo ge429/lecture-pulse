@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { callClaude } from "@/lib/anthropic";
+import { CLUSTER_SIMILARITY_THRESHOLD } from "@/lib/constants";
 
 // ── 한국어 대응 키워드 군집화 ─────────────────────────────────────────────────
 
@@ -69,7 +71,7 @@ function clusterByKeywords(
     for (let ci = 0; ci < clusterTokens.length; ci++) {
       const overlap = countOverlap(tokens, clusterTokens[ci]);
       const score = overlap / Math.max(tokens.length, 1);
-      if (score > bestScore && score >= 0.2) {
+      if (score > bestScore && score >= CLUSTER_SIMILARITY_THRESHOLD) {
         bestScore = score;
         bestCluster = ci;
       }
@@ -98,9 +100,6 @@ function clusterByKeywords(
 async function clusterByAI(
   questions: { id: string; text: string }[]
 ): Promise<Map<number, string[]> | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
   const prompt = `아래는 수업 중 학생들이 보낸 질문 목록입니다. 의미가 비슷한 질문끼리 군집으로 묶어주세요.
 같은 주제나 개념에 대한 질문이면 표현이 달라도 같은 군집으로 묶으세요.
 단독 질문도 하나의 군집으로 만들어주세요.
@@ -111,45 +110,24 @@ ${questions.map((q, i) => `${i + 1}. [${q.id}] ${q.text}`).join("\n")}
 응답 형식 (반드시 JSON만 출력, 다른 텍스트 없이):
 {"clusters": [{"ids": ["uuid1", "uuid2"], "label": "군집 요약"}, ...]}`;
 
+  const result = await callClaude([{ role: "user", content: prompt }], 1024);
+  if (!result.text) return null;
+
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!res.ok) {
-      console.error("AI clustering failed:", res.status, await res.text());
-      return null;
-    }
-
-    const data = await res.json();
-    const text = data.content?.[0]?.text ?? "";
-
-    // JSON 부분만 추출 (혹시 마크다운 코드블록 등 포함 시)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("AI clustering: no JSON found in response:", text);
+      console.error("AI clustering: no JSON found in response:", result.text);
       return null;
     }
 
     const json = JSON.parse(jsonMatch[0]);
-
-    const result = new Map<number, string[]>();
+    const clusters = new Map<number, string[]>();
     for (let i = 0; i < json.clusters.length; i++) {
-      result.set(i, json.clusters[i].ids);
+      clusters.set(i, json.clusters[i].ids);
     }
-    return result;
+    return clusters;
   } catch (err) {
-    console.error("AI clustering error:", err);
+    console.error("AI clustering parse error:", err);
     return null;
   }
 }

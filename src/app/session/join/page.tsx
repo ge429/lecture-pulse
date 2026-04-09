@@ -75,7 +75,7 @@ export default function JoinSession() {
 
           <button
             type="submit"
-            disabled={code.length < 4 || isJoining}
+            disabled={code.length < 6 || isJoining}
             className="rounded-xl bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isJoining ? "참여 중..." : "수업 참여하기"}

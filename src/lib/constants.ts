@@ -38,3 +38,15 @@ export const CLUSTER_COLORS = [
   "bg-orange-100 text-orange-800",
   "bg-cyan-100 text-cyan-800",
 ];
+
+// 타이머/인터벌 (ms)
+export const POLL_INTERVAL = 30_000;
+export const TOAST_DURATION = 2_600;
+export const TOAST_FADE_OUT = 400;
+export const SIGNAL_RESET_DELAY = 1_500;
+
+// 군집화 유사도 임계값
+export const CLUSTER_SIMILARITY_THRESHOLD = 0.2;
+
+// 수업 코드 길이
+export const SESSION_CODE_LENGTH = 6;

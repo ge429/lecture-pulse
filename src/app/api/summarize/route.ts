@@ -1,37 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { callClaude } from "@/lib/anthropic";
 
 export const maxDuration = 60;
 
-async function summarizePdf(fileUrl: string): Promise<{ summary: string | null; error?: string }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { summary: null, error: "ANTHROPIC_API_KEY가 설정되지 않았습니다." };
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 2048,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "document",
-                source: {
-                  type: "url",
-                  url: fileUrl,
-                },
-              },
-              {
-                type: "text",
-                text: `이 PDF는 대학 수업 자료입니다. 학생이 시험 전에 빠르게 복습할 수 있도록 한국어로 요약해주세요.
+const SUMMARY_PROMPT = `이 PDF는 대학 수업 자료입니다. 학생이 시험 전에 빠르게 복습할 수 있도록 한국어로 요약해주세요.
 
 톤:
 - 친구에게 설명하듯 자연스럽고 읽기 편하게
@@ -62,27 +35,7 @@ async function summarizePdf(fileUrl: string): Promise<{ summary: string | null; 
 과제 내용, 마감일, 제출 방법 등을 빠짐없이 정리.
 
 🔧 수식/다이어그램 (있는 경우만)
-주요 수식이나 도표가 뜻하는 바를 쉽게 풀어서.`,
-              },
-            ],
-          },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Claude API failed:", res.status, errText);
-      return { summary: null, error: `Claude API 오류 (${res.status}): ${errText.slice(0, 200)}` };
-    }
-
-    const data = await res.json();
-    return { summary: data.content?.[0]?.text ?? null };
-  } catch (err) {
-    console.error("Claude API error:", err);
-    return { summary: null, error: `API 호출 실패: ${String(err).slice(0, 200)}` };
-  }
-}
+주요 수식이나 도표가 뜻하는 바를 쉽게 풀어서.`;
 
 export async function POST(req: NextRequest) {
   const { materialId } = await req.json();
@@ -104,15 +57,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ summary: material.summary });
   }
 
-  const result = await summarizePdf(material.file_url);
-  if (!result.summary) {
+  const result = await callClaude([
+    {
+      role: "user",
+      content: [
+        { type: "document", source: { type: "url", url: material.file_url } },
+        { type: "text", text: SUMMARY_PROMPT },
+      ],
+    },
+  ]);
+
+  if (!result.text) {
     return NextResponse.json({ error: result.error || "요약 생성에 실패했습니다." }, { status: 500 });
   }
 
-  await supabase
-    .from("materials")
-    .update({ summary: result.summary })
-    .eq("id", materialId);
+  await supabase.from("materials").update({ summary: result.text }).eq("id", materialId);
 
-  return NextResponse.json({ summary: result.summary });
+  return NextResponse.json({ summary: result.text });
 }

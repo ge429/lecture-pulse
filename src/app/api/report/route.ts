@@ -1,27 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-
-// ── AI 요약 (선택) ───────────────────────────────────────────────────────────
+import { callClaude } from "@/lib/anthropic";
 
 async function generateAISummary(context: string): Promise<string | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 1024,
-        messages: [
-          {
-            role: "user",
-            content: `아래는 한 수업의 실시간 피드백 데이터입니다. 교수님을 위한 간결한 수업 리포트를 한국어로 작성해주세요.
+  const result = await callClaude([
+    {
+      role: "user",
+      content: `아래는 한 수업의 실시간 피드백 데이터입니다. 교수님을 위한 간결한 수업 리포트를 한국어로 작성해주세요.
 
 포함할 내용:
 1. 전체 이해도 요약 (한 줄)
@@ -31,17 +16,9 @@ async function generateAISummary(context: string): Promise<string | null> {
 
 데이터:
 ${context}`,
-          },
-        ],
-      }),
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.content?.[0]?.text ?? null;
-  } catch {
-    return null;
-  }
+    },
+  ], 1024);
+  return result.text;
 }
 
 // ── GET handler ──────────────────────────────────────────────────────────────

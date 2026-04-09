@@ -5,7 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getStudentId } from "@/lib/student";
-import { SIGNALS } from "@/lib/constants";
+import { SIGNALS, SIGNAL_RESET_DELAY } from "@/lib/constants";
 import type { ResponseType } from "@/lib/database.types";
 import ActivePoll from "@/components/ActivePoll";
 import QuestionInput from "@/components/QuestionInput";
@@ -79,7 +79,7 @@ export default function StudentPage({
     }
 
     setLastSent(signalId);
-    setTimeout(() => setSelected(null), 1500);
+    setTimeout(() => setSelected(null), SIGNAL_RESET_DELAY);
   };
 
   if (error) {
