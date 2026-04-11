@@ -54,8 +54,15 @@ export async function GET(req: NextRequest) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
+  // 수업 자료
+  const { data: materials } = await supabase
+    .from("materials")
+    .select("file_name, summary")
+    .eq("session_id", sessionId);
+
   const allResponses = responses ?? [];
   const allQuestions = questions ?? [];
+  const allMaterials = materials ?? [];
 
   // ── 통계 계산 ──
 
@@ -121,12 +128,15 @@ export async function GET(req: NextRequest) {
     .map(([id, texts]) => ({ clusterId: id, count: texts.length, questions: texts }));
 
   // ── AI 요약 생성 ──
+  const materialSummaries = allMaterials.filter((m) => m.summary).map((m) => m.summary).join("\n");
+
   const contextForAI = `
 수업명: ${session.name}
 참여 학생: ${uniqueStudents}명
 총 응답: ${allResponses.length}건 (이해됨: ${typeCounts.understood}, 헷갈림: ${typeCounts.confused}, 모르겠음: ${typeCounts.lost})
 시간대별 추이: ${JSON.stringify(timeline)}
 질문 (${allQuestions.length}건): ${allQuestions.map((q) => q.text).join(" / ")}
+수업 자료 (${allMaterials.length}건): ${materialSummaries.slice(0, 3000)}
 `;
 
   const aiSummary = await generateAISummary(contextForAI);
@@ -149,6 +159,7 @@ export async function GET(req: NextRequest) {
       clusters: questionClusters,
       unclustered: unclusteredQs,
     },
+    materials: allMaterials.map((m) => ({ fileName: m.file_name, hasSummary: !!m.summary })),
     aiSummary,
   });
 }

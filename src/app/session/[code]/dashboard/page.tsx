@@ -34,6 +34,7 @@ export default function DashboardPage({
   const [activePoll, setActivePoll] = useState<{ id: string; question: string; poll_type: string; options: string[]; is_open: boolean } | null>(null);
   const [pollResults, setPollResults] = useState<{ answer: string; count: number }[]>([]);
   const [materials, setMaterials] = useState<{ id: string; file_name: string; file_url: string; summary: string | null }[]>([]);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -142,6 +143,23 @@ export default function DashboardPage({
     if (!activePoll) return;
     await supabase.from("polls").update({ is_open: false }).eq("id", activePoll.id);
     setActivePoll({ ...activePoll, is_open: false });
+  };
+
+  const handleGenerateQuiz = async () => {
+    if (!sessionId || generatingQuiz) return;
+    setGeneratingQuiz(true);
+    const res = await fetch("/api/generate-quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(`🎯 퀴즈 ${data.created}개가 생성되었습니다!`);
+    } else {
+      alert(data.error || "퀴즈 생성 실패");
+    }
+    setGeneratingQuiz(false);
   };
 
   const showToast = (message: string) => {
@@ -317,6 +335,18 @@ export default function DashboardPage({
             onCreatePoll={handleCreatePoll}
             onClosePoll={handleClosePoll}
           />
+        )}
+
+        {isActive && materials.some((m) => m.summary) && (
+          <div className="mb-4 flex justify-center">
+            <button
+              onClick={handleGenerateQuiz}
+              disabled={generatingQuiz}
+              className="rounded-xl bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+            >
+              {generatingQuiz ? "퀴즈 생성 중..." : "🎯 AI 퀴즈 자동 생성 (수업자료 기반)"}
+            </button>
+          </div>
         )}
 
         <QuestionsPanel questions={questions} clustering={clustering} onCluster={handleCluster} />
