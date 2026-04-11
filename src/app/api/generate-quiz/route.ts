@@ -61,11 +61,16 @@ OX 퀴즈 3개와 객관식 퀴즈 2개를 만들어주세요.
 
   let created = 0;
   for (const quiz of quizzes) {
+    // 정답을 options JSON에 _answer 키로 함께 저장
+    const optionsWithAnswer = {
+      choices: quiz.options,
+      _answer: quiz.answer,
+    };
     const { error } = await supabase.from("polls").insert({
       session_id: sessionId,
       question: quiz.question,
       poll_type: quiz.type,
-      options: quiz.options,
+      options: optionsWithAnswer,
       is_open: false,
     });
     if (!error) created++;
