@@ -10,6 +10,13 @@ interface Poll {
   is_open: boolean;
 }
 
+interface PendingPoll {
+  id: string;
+  question: string;
+  poll_type: string;
+  options: string[];
+}
+
 interface PollResult {
   answer: string;
   count: number;
@@ -17,14 +24,18 @@ interface PollResult {
 
 export default function PollPanel({
   activePoll,
+  pendingPolls,
   pollResults,
   onCreatePoll,
   onClosePoll,
+  onOpenPoll,
 }: {
   activePoll: Poll | null;
+  pendingPolls: PendingPoll[];
   pollResults: PollResult[];
   onCreatePoll: (question: string, pollType: string, options: string[]) => void;
   onClosePoll: () => void;
+  onOpenPoll: (pollId: string) => void;
 }) {
   const [showForm, setShowForm] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -62,6 +73,7 @@ export default function PollPanel({
         )}
       </div>
 
+      {/* 새 퀴즈 생성 폼 */}
       {showForm && (
         <div className="mb-4 flex flex-col gap-3 rounded-xl bg-background p-4">
           <input
@@ -113,8 +125,9 @@ export default function PollPanel({
         </div>
       )}
 
+      {/* 현재 진행 중인 퀴즈 */}
       {activePoll && (
-        <div>
+        <div className="mb-4">
           <p className="mb-3 font-medium text-foreground">
             {activePoll.question}
           </p>
@@ -155,7 +168,38 @@ export default function PollPanel({
         </div>
       )}
 
-      {!activePoll && !showForm && (
+      {/* 대기 중인 퀴즈 목록 */}
+      {pendingPolls.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold text-muted">
+            대기 중 ({pendingPolls.length}개)
+          </p>
+          <div className="flex flex-col gap-2">
+            {pendingPolls.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between rounded-lg bg-background px-4 py-2.5"
+              >
+                <div>
+                  <span className="mr-2 text-xs text-muted">
+                    {p.poll_type === "ox" ? "OX" : "객관식"}
+                  </span>
+                  <span className="text-sm text-foreground">{p.question}</span>
+                </div>
+                <button
+                  onClick={() => onOpenPoll(p.id)}
+                  disabled={activePoll?.is_open}
+                  className="shrink-0 rounded-lg bg-success px-3 py-1 text-xs font-semibold text-white hover:bg-success/90 disabled:opacity-50"
+                >
+                  출제
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!activePoll && pendingPolls.length === 0 && !showForm && (
         <p className="py-4 text-center text-sm text-muted">
           퀴즈를 만들어 학생들의 이해도를 확인해보세요.
         </p>

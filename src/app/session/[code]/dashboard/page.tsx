@@ -32,6 +32,7 @@ export default function DashboardPage({
   const [clustering, setClustering] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [activePoll, setActivePoll] = useState<{ id: string; question: string; poll_type: string; options: string[]; is_open: boolean } | null>(null);
+  const [pendingPolls, setPendingPolls] = useState<{ id: string; question: string; poll_type: string; options: string[] }[]>([]);
   const [pollResults, setPollResults] = useState<{ answer: string; count: number }[]>([]);
   const [materials, setMaterials] = useState<{ id: string; file_name: string; file_url: string; summary: string | null }[]>([]);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
@@ -86,6 +87,16 @@ export default function DashboardPage({
       .order("created_at", { ascending: false })
       .limit(50);
     if (data) setQuestions(data);
+  }, []);
+
+  const fetchPendingPolls = useCallback(async (sessionId: string) => {
+    const { data } = await supabase
+      .from("polls")
+      .select("id, question, poll_type, options")
+      .eq("session_id", sessionId)
+      .eq("is_open", false)
+      .order("created_at", { ascending: false });
+    if (data) setPendingPolls(data);
   }, []);
 
   const fetchPollResults = useCallback(async (pollId: string) => {
@@ -143,6 +154,25 @@ export default function DashboardPage({
     if (!activePoll) return;
     await supabase.from("polls").update({ is_open: false }).eq("id", activePoll.id);
     setActivePoll({ ...activePoll, is_open: false });
+    if (sessionId) fetchPendingPolls(sessionId);
+  };
+
+  const handleOpenPoll = async (pollId: string) => {
+    // 기존 열린 투표 닫기
+    if (activePoll?.is_open) {
+      await supabase.from("polls").update({ is_open: false }).eq("id", activePoll.id);
+    }
+    await supabase.from("polls").update({ is_open: true }).eq("id", pollId);
+    const { data } = await supabase
+      .from("polls")
+      .select("id, question, poll_type, options, is_open")
+      .eq("id", pollId)
+      .single();
+    if (data) {
+      setActivePoll(data);
+      setPollResults([]);
+    }
+    if (sessionId) fetchPendingPolls(sessionId);
   };
 
   const handleGenerateQuiz = async () => {
@@ -156,6 +186,7 @@ export default function DashboardPage({
     const data = await res.json();
     if (res.ok) {
       showToast(`🎯 퀴즈 ${data.created}개가 생성되었습니다!`);
+      if (sessionId) fetchPendingPolls(sessionId);
     } else {
       alert(data.error || "퀴즈 생성 실패");
     }
@@ -193,6 +224,7 @@ export default function DashboardPage({
       fetchStats(data.id, data.is_active);
       fetchQuestions(data.id);
       fetchMaterials(data.id);
+      fetchPendingPolls(data.id);
 
       const { data: poll } = await supabase
         .from("polls")
@@ -331,9 +363,11 @@ export default function DashboardPage({
         {isActive && (
           <PollPanel
             activePoll={activePoll}
+            pendingPolls={pendingPolls}
             pollResults={pollResults}
             onCreatePoll={handleCreatePoll}
             onClosePoll={handleClosePoll}
+            onOpenPoll={handleOpenPoll}
           />
         )}
 
