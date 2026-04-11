@@ -7,45 +7,23 @@ interface Material {
   id: string;
   file_name: string;
   file_url: string;
-  summary: string | null;
 }
 
 export default function MaterialViewer({ sessionId }: { sessionId: string }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [openPdf, setOpenPdf] = useState<string | null>(null);
-  const [openSummary, setOpenSummary] = useState<string | null>(null);
-  const [summarizing, setSummarizing] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from("materials")
-        .select("id, file_name, file_url, summary")
+        .select("id, file_name, file_url")
         .eq("session_id", sessionId)
         .order("created_at", { ascending: false });
       if (data) setMaterials(data);
     }
     load();
   }, [sessionId]);
-
-  const handleSummarize = async (materialId: string) => {
-    setSummarizing(materialId);
-    const res = await fetch("/api/summarize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ materialId }),
-    });
-    if (res.ok) {
-      const { summary } = await res.json();
-      setMaterials((prev) =>
-        prev.map((m) => (m.id === materialId ? { ...m, summary } : m))
-      );
-    } else {
-      const data = await res.json();
-      alert(data.error || "요약 생성 실패");
-    }
-    setSummarizing(null);
-  };
 
   if (materials.length === 0) return null;
 
@@ -72,32 +50,6 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
               </a>
             </div>
 
-            {/* 버튼 영역 */}
-            <div className="mt-2 flex gap-2">
-              {!m.summary && !summarizing && (
-                <button
-                  onClick={() => handleSummarize(m.id)}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover"
-                >
-                  🤖 AI 요약
-                </button>
-              )}
-              {summarizing === m.id && (
-                <span className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-                  요약 중 (최대 30초)...
-                </span>
-              )}
-              {m.summary && (
-                <button
-                  onClick={() => setOpenSummary(openSummary === m.id ? null : m.id)}
-                  className="rounded-lg bg-success/15 px-3 py-1.5 text-xs font-semibold text-success hover:bg-success/25"
-                >
-                  {openSummary === m.id ? "요약 닫기" : "✅ 요약 보기"}
-                </button>
-              )}
-            </div>
-
-            {/* PDF 뷰어 */}
             {openPdf === m.id && (
               <div className="mt-3 overflow-hidden rounded-lg border border-border">
                 <iframe
@@ -105,13 +57,6 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
                   className="h-[400px] w-full"
                   title={m.file_name}
                 />
-              </div>
-            )}
-
-            {/* 요약 (토글) */}
-            {openSummary === m.id && m.summary && (
-              <div className="mt-3 whitespace-pre-wrap rounded-lg bg-primary/5 p-4 text-sm leading-relaxed text-foreground">
-                {m.summary}
               </div>
             )}
           </div>

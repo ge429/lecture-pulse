@@ -337,7 +337,7 @@ export default function DashboardPage({
           />
         )}
 
-        {isActive && materials.some((m) => m.summary) && (
+        {isActive && materials.length > 0 && (
           <div className="mb-4 flex justify-center">
             <button
               onClick={handleGenerateQuiz}
