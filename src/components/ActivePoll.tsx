@@ -50,7 +50,15 @@ export default function ActivePoll({ sessionId }: { sessionId: string }) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "polls", filter: `session_id=eq.${sessionId}` },
         (payload) => {
-          if (payload.new && payload.new.is_open === false) {
+          if (payload.new && payload.new.is_open === true) {
+            setPoll({
+              id: payload.new.id,
+              question: payload.new.question,
+              options: payload.new.options,
+              is_open: true,
+            });
+            setVoted(null);
+          } else if (payload.new && payload.new.is_open === false) {
             setPoll((prev) => (prev ? { ...prev, is_open: false } : null));
           }
         }
