@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale } from "./LocaleProvider";
+
 export default function StatBar({
   label,
   emoji,
@@ -11,6 +15,7 @@ export default function StatBar({
   total: number;
   color: string;
 }) {
+  const { t } = useLocale();
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div className="flex items-center gap-2 sm:gap-3">
@@ -24,7 +29,7 @@ export default function StatBar({
         />
       </div>
       <span className="w-14 sm:w-16 text-right text-[10px] sm:text-xs font-bold tabular-nums text-muted">
-        {count}명 ({pct}%)
+        {count}{t("chart.people")} ({pct}%)
       </span>
     </div>
   );

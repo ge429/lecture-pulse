@@ -365,7 +365,7 @@ export default function DashboardPage({
                 CODE: {code}
               </span>
               <span className="text-[10px] bg-card text-muted px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-border">
-                {total}명 참여
+                {total}{t("chart.people")} {t("dash.participants")}
               </span>
             </div>
           </div>
@@ -409,9 +409,9 @@ export default function DashboardPage({
                   <DonutChart stats={stats} />
                   <div className="mt-6 pt-6 border-t border-border">
                     <div className="flex flex-col gap-3">
-                      <StatBar label="이해됨" emoji="✅" count={stats.understood} total={total} color="bg-success" />
-                      <StatBar label="헷갈림" emoji="🤔" count={stats.confused} total={total} color="bg-primary" />
-                      <StatBar label="모르겠음" emoji="❌" count={stats.lost} total={total} color="bg-danger" />
+                      <StatBar label={t("student.understood")} emoji="✅" count={stats.understood} total={total} color="bg-success" />
+                      <StatBar label={t("student.confused")} emoji="🤔" count={stats.confused} total={total} color="bg-primary" />
+                      <StatBar label={t("student.lost")} emoji="❌" count={stats.lost} total={total} color="bg-danger" />
                     </div>
                   </div>
                 </>

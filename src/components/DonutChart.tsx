@@ -1,6 +1,7 @@
 "use client";
 
 import { SIGNALS } from "@/lib/constants";
+import { useLocale } from "./LocaleProvider";
 
 interface Stats {
   understood: number;
@@ -36,13 +37,20 @@ function donutSlice(
 }
 
 export default function DonutChart({ stats }: { stats: Stats }) {
+  const { t } = useLocale();
   const total = stats.understood + stats.confused + stats.lost;
   const cx = 80, cy = 80, outerR = 68, innerR = 44;
+
+  const signalKeys: Record<string, string> = {
+    understood: "student.understood",
+    confused: "student.confused",
+    lost: "student.lost",
+  };
 
   const segments = SIGNALS.map((s) => ({
     value: stats[s.id],
     color: s.hex,
-    label: s.label,
+    label: t(signalKeys[s.id]),
   }));
 
   let cursor = 0;
@@ -77,7 +85,7 @@ export default function DonutChart({ stats }: { stats: Stats }) {
           {total > 0 ? `${confusionPct}%` : "—"}
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="var(--muted)">
-          혼란도
+          {t("chart.confusion")}
         </text>
       </svg>
 
@@ -91,13 +99,13 @@ export default function DonutChart({ stats }: { stats: Stats }) {
                 style={{ background: seg.color }}
               />
               <span className="text-muted w-16">{seg.label}</span>
-              <span className="font-bold tabular-nums">{seg.value}명</span>
+              <span className="font-bold tabular-nums">{seg.value}{t("chart.people")}</span>
               <span className="text-muted tabular-nums text-xs">({pct}%)</span>
             </div>
           );
         })}
         <div className="pt-1 border-t border-border text-muted text-xs">
-          합계 {total}명
+          {t("chart.total")} {total}{t("chart.people")}
         </div>
       </div>
     </div>

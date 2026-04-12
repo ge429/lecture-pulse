@@ -136,6 +136,9 @@ const translations: Record<string, Record<Locale, string>> = {
   "comp.closeSummary": { ko: "요약 닫기", en: "Close Summary", zh: "关闭摘要" },
   "comp.summaryWaiting": { ko: "요약 생성 대기 중...", en: "Waiting for summary...", zh: "等待生成摘要..." },
   "comp.delete": { ko: "삭제", en: "Delete", zh: "删除" },
+  "chart.confusion": { ko: "혼란도", en: "Confusion", zh: "困惑度" },
+  "chart.total": { ko: "합계", en: "Total", zh: "合计" },
+  "chart.people": { ko: "명", en: "", zh: "人" },
   // Report
   "report.title": { ko: "수업 리포트", en: "Session Report", zh: "课程报告" },
   "report.back": { ko: "← 대시보드로", en: "← Dashboard", zh: "← 仪表板" },
