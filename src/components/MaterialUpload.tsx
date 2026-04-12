@@ -20,6 +20,7 @@ export default function MaterialUpload({
   onUploaded: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -46,15 +47,35 @@ export default function MaterialUpload({
       .from("materials")
       .getPublicUrl(filePath);
 
-    await supabase.from("materials").insert({
+    const { data: inserted } = await supabase.from("materials").insert({
       session_id: sessionId,
       file_name: file.name,
       file_url: urlData.publicUrl,
-    });
+    }).select("id").single();
 
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
     onUploaded();
+
+    // 자동 AI 요약 생성
+    if (inserted) {
+      setSummarizing(true);
+      try {
+        const res = await fetch("/api/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileUrl: urlData.publicUrl, fileName: file.name }),
+        });
+        if (res.ok) {
+          const { summary } = await res.json();
+          await supabase.from("materials").update({ summary }).eq("id", inserted.id);
+          onUploaded();
+        }
+      } catch {
+        // 요약 실패해도 업로드는 성공
+      }
+      setSummarizing(false);
+    }
   };
 
   const handleDelete = async (id: string, fileUrl: string) => {
@@ -89,6 +110,13 @@ export default function MaterialUpload({
         </label>
       </div>
 
+      {summarizing && (
+        <div className="mb-3 rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-[10px] text-primary font-bold uppercase tracking-widest">AI가 강의자료를 분석하고 있습니다...</span>
+        </div>
+      )}
+
       {materials.length === 0 ? (
         <p className="py-4 text-center text-xs text-muted font-mono uppercase tracking-widest">
           No files uploaded
@@ -96,22 +124,27 @@ export default function MaterialUpload({
       ) : (
         <div className="flex flex-col gap-2">
           {materials.map((m) => (
-            <div key={m.id} className="flex items-center justify-between rounded-xl bg-surface-dim p-3 border border-border">
-              <a
-                href={m.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-primary hover:brightness-110 truncate max-w-[200px] sm:max-w-none"
-              >
-                📄 {m.file_name}
-              </a>
-              <button
-                onClick={() => handleDelete(m.id, m.file_url)}
-                disabled={deleting === m.id}
-                className="text-[10px] font-bold text-muted hover:text-danger uppercase tracking-widest transition-colors disabled:opacity-50"
-              >
-                {deleting === m.id ? "..." : "Delete"}
-              </button>
+            <div key={m.id} className="rounded-xl bg-surface-dim p-3 border border-border">
+              <div className="flex items-center justify-between">
+                <a
+                  href={m.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-primary hover:brightness-110 truncate max-w-[200px] sm:max-w-none"
+                >
+                  📄 {m.file_name}
+                </a>
+                <div className="flex items-center gap-2">
+                  {m.summary && <span className="text-[10px] text-success font-bold">✓ 요약됨</span>}
+                  <button
+                    onClick={() => handleDelete(m.id, m.file_url)}
+                    disabled={deleting === m.id}
+                    className="text-[10px] font-bold text-muted hover:text-danger uppercase tracking-widest transition-colors disabled:opacity-50"
+                  >
+                    {deleting === m.id ? "..." : "Delete"}
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
