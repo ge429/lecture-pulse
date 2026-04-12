@@ -319,7 +319,7 @@ export default function DashboardPage({
 
   if (error) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <p className="mb-4 text-lg text-danger">{error}</p>
         <Link href="/" className="text-primary hover:underline">홈으로 돌아가기</Link>
       </div>
@@ -329,13 +329,14 @@ export default function DashboardPage({
   if (!sessionId) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted">수업 연결 중...</p>
+        <p className="text-muted font-mono text-xs uppercase tracking-widest">Loading Dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col px-4 pt-8 pb-12">
+    <div className="flex flex-1 flex-col p-4 md:p-8">
+      {/* Toast */}
       {toast && (
         <div
           className="fixed top-6 left-1/2 z-50 rounded-2xl bg-primary px-8 py-4 shadow-2xl shadow-primary/25"
@@ -345,142 +346,153 @@ export default function DashboardPage({
               : "toastOut 0.4s cubic-bezier(0.16,1,0.3,1) forwards",
           }}
         >
-          <p className="text-base font-bold text-white">{toast}</p>
+          <p className="text-base font-bold text-background">{toast}</p>
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-sm text-muted hover:text-foreground">← 종료</Link>
-          <h1 className="text-lg font-bold">{sessionName}</h1>
-          <div className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-mono font-bold text-primary">{code}</div>
-        </div>
-
-        <div className="mb-4 rounded-2xl border border-border bg-card p-6">
-          <div className="mb-1 text-sm text-muted">참여 현황</div>
-          <div className="text-3xl font-bold">
-            {total}<span className="ml-1 text-base font-normal text-muted">명</span>
-          </div>
-        </div>
-
-        {/* AI 코파일럿 */}
-        {(copilot || copilotLoading) && (
-          <div className={`mb-4 rounded-2xl border p-5 ${
-            copilot?.severity === "critical"
-              ? "border-danger/30 bg-danger/5"
-              : "border-warning/30 bg-warning/5"
-          }`}>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-sm font-semibold">
-                {copilot?.severity === "critical" ? "🚨" : "💡"} AI 코파일럿
+      <div className="mx-auto w-full max-w-[1400px]">
+        {/* Header */}
+        <div className="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+          <div>
+            <h2 className="text-2xl md:text-4xl font-black font-headline text-foreground uppercase tracking-tighter">{sessionName}</h2>
+            <div className="flex flex-wrap gap-2 md:gap-4 mt-2">
+              <span className="flex items-center gap-1 text-[10px] bg-success/10 text-success px-2 py-0.5 rounded font-bold uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> Live
               </span>
-              {copilotLoading && <span className="text-xs text-muted">분석 중...</span>}
+              <span className="text-[10px] bg-card text-muted px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-border">
+                CODE: {code}
+              </span>
+              <span className="text-[10px] bg-card text-muted px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-border">
+                {total}명 참여
+              </span>
             </div>
-            {copilot && (
-              <>
-                <p className="text-sm leading-relaxed text-foreground">{copilot.suggestion}</p>
-                {copilot.suggestQuiz && copilot.quizTopic && (
-                  <button
-                    onClick={() => handleGenerateQuiz(copilot.quizTopic!)}
-                    disabled={generatingQuiz}
-                    className="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
-                  >
-                    {generatingQuiz ? "생성 중..." : `🎯 "${copilot.quizTopic}" 주제로 퀴즈 만들기`}
-                  </button>
-                )}
-              </>
+          </div>
+          <div className="flex gap-2 md:gap-4">
+            <Link href={`/session/${code}/report`} className="bg-card text-foreground px-4 md:px-6 py-2 rounded-full border border-border font-bold text-xs md:text-sm hover:border-primary/50 transition-all uppercase tracking-wider">
+              Report
+            </Link>
+            {isActive ? (
+              <button onClick={handleEndSession} className="bg-danger text-white px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:brightness-110 transition-all uppercase tracking-wider">
+                End Session
+              </button>
+            ) : (
+              <Link href="/" className="bg-muted/20 text-muted px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm uppercase tracking-wider">
+                종료됨
+              </Link>
             )}
           </div>
-        )}
-
-        <div className="mb-4 rounded-2xl border border-border bg-card p-6">
-          <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">이해도 분포</h2>
-          {total === 0 ? (
-            <p className="py-8 text-center text-muted text-sm">아직 응답이 없습니다. 학생들이 참여하면 여기에 표시됩니다.</p>
-          ) : (
-            <DonutChart stats={stats} />
-          )}
         </div>
 
-        {total > 0 && (
-          <div className="mb-4 rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">실시간 이해도</h2>
-            <div className="flex flex-col gap-4">
-              <StatBar label="이해됨" emoji="✅" count={stats.understood} total={total} color="bg-success" />
-              <StatBar label="헷갈림" emoji="🤔" count={stats.confused} total={total} color="bg-warning" />
-              <StatBar label="모르겠음" emoji="❌" count={stats.lost} total={total} color="bg-danger" />
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+          {/* Left Column - Charts */}
+          <div className="lg:col-span-8 space-y-4 md:space-y-6">
+            {/* Understanding Distribution */}
+            <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-lg md:text-xl font-bold font-headline text-foreground">Neural Engagement Pulse</h3>
+                  <p className="text-muted text-[10px] uppercase tracking-widest">Real-time biometrics</p>
+                </div>
+                <div className="hidden md:flex gap-4 text-[10px] font-bold uppercase tracking-widest">
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success" /> Understanding</span>
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary" /> Confusion</span>
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-danger" /> Lost</span>
+                </div>
+              </div>
+              {total === 0 ? (
+                <p className="py-12 text-center text-muted text-sm">아직 응답이 없습니다. 학생들이 참여하면 여기에 표시됩니다.</p>
+              ) : (
+                <>
+                  <DonutChart stats={stats} />
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <div className="flex flex-col gap-3">
+                      <StatBar label="이해됨" emoji="✅" count={stats.understood} total={total} color="bg-success" />
+                      <StatBar label="헷갈림" emoji="🤔" count={stats.confused} total={total} color="bg-primary" />
+                      <StatBar label="모르겠음" emoji="❌" count={stats.lost} total={total} color="bg-danger" />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
+
+            {/* Materials */}
+            {isActive && sessionId && (
+              <MaterialUpload sessionId={sessionId} materials={materials} onUploaded={() => fetchMaterials(sessionId)} />
+            )}
+
+            {/* Poll */}
+            {isActive && (
+              <PollPanel activePoll={activePoll} pendingPolls={pendingPolls} pollResults={pollResults} onCreatePoll={handleCreatePoll} onClosePoll={handleClosePoll} onOpenPoll={handleOpenPoll} />
+            )}
+
+            {isActive && materials.length > 0 && (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => handleGenerateQuiz()}
+                  disabled={generatingQuiz}
+                  className="rounded-xl bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/20 disabled:opacity-50 uppercase tracking-wider"
+                >
+                  {generatingQuiz ? "Generating..." : "🎯 AI 퀴즈 자동 생성"}
+                </button>
+              </div>
+            )}
           </div>
-        )}
 
-        {isActive && sessionId && (
-          <MaterialUpload
-            sessionId={sessionId}
-            materials={materials}
-            onUploaded={() => fetchMaterials(sessionId)}
-          />
-        )}
-
-        {isActive && (
-          <PollPanel
-            activePoll={activePoll}
-            pendingPolls={pendingPolls}
-            pollResults={pollResults}
-            onCreatePoll={handleCreatePoll}
-            onClosePoll={handleClosePoll}
-            onOpenPoll={handleOpenPoll}
-          />
-        )}
-
-        {isActive && materials.length > 0 && (
-          <div className="mb-4 flex justify-center">
-            <button
-              onClick={() => handleGenerateQuiz()}
-              disabled={generatingQuiz}
-              className="rounded-xl bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
-            >
-              {generatingQuiz ? "퀴즈 생성 중..." : "🎯 AI 퀴즈 자동 생성 (수업자료 기반)"}
-            </button>
-          </div>
-        )}
-
-        <QuestionsPanel questions={questions} clustering={clustering} onCluster={handleCluster} />
-
-        <div className="mb-6 flex gap-3">
-          {isActive ? (
-            <button
-              onClick={handleEndSession}
-              className="flex-1 rounded-xl border-2 border-danger px-4 py-3 text-sm font-semibold text-danger transition-colors hover:bg-danger/5"
-            >
-              수업 종료하기
-            </button>
-          ) : (
-            <div className="flex-1 rounded-xl bg-muted/10 px-4 py-3 text-center text-sm text-muted">
-              수업이 종료되었습니다
+          {/* Right Column - Sidebar */}
+          <div className="lg:col-span-4 space-y-4 md:space-y-6">
+            {/* AI Copilot */}
+            <div className={`rounded-2xl p-5 md:p-6 border relative overflow-hidden ${
+              copilot?.severity === "critical"
+                ? "border-danger/30 bg-gradient-to-br from-danger/10 to-card"
+                : "border-primary/20 bg-gradient-to-br from-primary/10 to-card"
+            }`}>
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-primary">🤖</span>
+                <h4 className="font-black text-foreground uppercase tracking-tight text-sm">AI Copilot</h4>
+                {copilotLoading && <span className="text-[10px] text-muted animate-pulse">분석 중...</span>}
+              </div>
+              {copilot ? (
+                <div className="space-y-3">
+                  <div className="bg-surface-dim/50 p-3 md:p-4 rounded-xl text-sm border-l-2 border-primary">
+                    <p className="text-foreground leading-relaxed">{copilot.suggestion}</p>
+                  </div>
+                  {copilot.suggestQuiz && copilot.quizTopic && (
+                    <button
+                      onClick={() => handleGenerateQuiz(copilot.quizTopic!)}
+                      disabled={generatingQuiz}
+                      className="w-full bg-primary/10 hover:bg-primary/20 text-primary text-xs py-2 rounded-lg font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                    >
+                      {generatingQuiz ? "생성 중..." : `🎯 ${copilot.quizTopic} 퀴즈`}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted text-xs">혼란도가 높아지면 AI가 자동으로 제안합니다.</p>
+              )}
             </div>
-          )}
-          <Link
-            href={`/session/${code}/report`}
-            className="flex-1 rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
-          >
-            📊 리포트 보기
-          </Link>
+
+            {/* Questions */}
+            <QuestionsPanel questions={questions} clustering={clustering} onCluster={handleCluster} />
+
+            {/* QR Code */}
+            {isActive && (
+              <div className="rounded-2xl border border-border bg-card p-6 text-center">
+                <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-4">Access Code</p>
+                <div className="mb-4 flex justify-center">
+                  <QRCodeSVG
+                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/session/${code}/student`}
+                    size={140}
+                    bgColor="transparent"
+                    fgColor="#c9bfff"
+                  />
+                </div>
+                <p className="text-2xl md:text-3xl font-mono font-black tracking-widest text-primary">{code}</p>
+              </div>
+            )}
+          </div>
         </div>
-
-        {isActive && (
-          <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
-            <p className="mb-4 text-sm text-muted">학생들에게 QR코드를 보여주거나 코드를 공유하세요</p>
-            <div className="mb-4 flex justify-center">
-              <QRCodeSVG
-                value={`${typeof window !== "undefined" ? window.location.origin : ""}/session/${code}/student`}
-                size={160}
-                bgColor="transparent"
-                fgColor="#6366f1"
-              />
-            </div>
-            <p className="text-2xl sm:text-4xl font-mono font-bold tracking-widest text-primary">{code}</p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 import Link from "next/link";
+import PulseWave from "@/components/PulseWave";
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 py-20">
       <div className="w-full max-w-6xl text-center space-y-16">
         {/* Hero */}
-        <div className="space-y-4 py-12">
+        <div className="space-y-4 py-12 relative">
+          <PulseWave />
           <h1 className="text-5xl md:text-8xl font-black font-headline tracking-tighter leading-none text-foreground">
             Lecture{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-success">

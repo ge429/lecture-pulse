@@ -57,29 +57,27 @@ export default function MaterialUpload({
     onUploaded();
   };
 
-
   const handleDelete = async (id: string, fileUrl: string) => {
     if (deleting) return;
     setDeleting(id);
-    // Storage에서 파일 삭제
     const path = fileUrl.split("/materials/")[1];
     if (path) {
       await supabase.storage.from("materials").remove([decodeURIComponent(path)]);
     }
-    // DB에서 삭제
     await supabase.from("materials").delete().eq("id", id);
     setDeleting(null);
     onUploaded();
   };
 
   return (
-    <div className="mb-4 rounded-2xl border border-border bg-card p-6">
+    <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
-          수업 자료
-        </h2>
-        <label className="cursor-pointer rounded-lg bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20">
-          {uploading ? "업로드 중..." : "+ PDF 업로드"}
+        <div>
+          <h4 className="font-black text-foreground uppercase tracking-tight text-sm">Lecture Materials</h4>
+          <span className="text-[10px] text-muted">{materials.length} files</span>
+        </div>
+        <label className="cursor-pointer rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 uppercase tracking-widest transition-all">
+          {uploading ? "Uploading..." : "+ Upload PDF"}
           <input
             ref={fileRef}
             type="file"
@@ -92,30 +90,28 @@ export default function MaterialUpload({
       </div>
 
       {materials.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted">
-          아직 업로드된 자료가 없습니다.
+        <p className="py-4 text-center text-xs text-muted font-mono uppercase tracking-widest">
+          No files uploaded
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {materials.map((m) => (
-            <div key={m.id} className="rounded-xl bg-background p-4">
-              <div className="flex items-center justify-between">
-                <a
-                  href={m.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary hover:underline truncate max-w-[200px] sm:max-w-none"
-                >
-                  📄 {m.file_name}
-                </a>
-                <button
-                  onClick={() => handleDelete(m.id, m.file_url)}
-                  disabled={deleting === m.id}
-                  className="rounded-lg px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50"
-                >
-                  {deleting === m.id ? "..." : "삭제"}
-                </button>
-              </div>
+            <div key={m.id} className="flex items-center justify-between rounded-xl bg-surface-dim p-3 border border-border">
+              <a
+                href={m.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-primary hover:brightness-110 truncate max-w-[200px] sm:max-w-none"
+              >
+                📄 {m.file_name}
+              </a>
+              <button
+                onClick={() => handleDelete(m.id, m.file_url)}
+                disabled={deleting === m.id}
+                className="text-[10px] font-bold text-muted hover:text-danger uppercase tracking-widest transition-colors disabled:opacity-50"
+              >
+                {deleting === m.id ? "..." : "Delete"}
+              </button>
             </div>
           ))}
         </div>

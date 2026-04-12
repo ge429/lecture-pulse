@@ -31,28 +31,26 @@ export default function QuestionInput({ sessionId }: { sessionId: string }) {
   };
 
   return (
-    <div className="mt-8 rounded-2xl border border-border bg-card p-5">
-      <h2 className="mb-3 text-sm font-semibold text-foreground">
-        💬 질문하기
-      </h2>
+    <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-3">Signal Queue</p>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="이해가 안 되는 부분을 질문해보세요"
-          className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          placeholder="질문을 입력하세요"
+          className="flex-1 rounded-xl bg-surface-dim border-none px-4 py-2.5 text-sm text-foreground placeholder:text-muted/40 focus:ring-1 focus:ring-primary focus:outline-none transition-all"
         />
         <button
           type="submit"
           disabled={!text.trim() || sending}
-          className="shrink-0 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-background transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
         >
-          {sending ? "..." : sent ? "✓" : "전송"}
+          {sending ? "..." : sent ? "✓" : "Send"}
         </button>
       </form>
       {sent && (
-        <p className="mt-2 text-xs text-success">질문이 전송되었습니다!</p>
+        <p className="mt-2 text-[10px] text-success font-mono uppercase tracking-widest">Signal_Transmitted</p>
       )}
     </div>
   );

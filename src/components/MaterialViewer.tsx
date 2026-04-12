@@ -29,14 +29,14 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="mt-6 rounded-2xl border border-border bg-card p-5">
-      <h2 className="mb-3 text-sm font-semibold text-foreground">📄 수업 자료</h2>
-      <div className="flex flex-col gap-3">
+      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-3">Lecture Materials</p>
+      <div className="flex flex-col gap-2">
         {materials.map((m) => (
-          <div key={m.id} className="rounded-xl bg-background p-4">
-            <div className="flex items-center gap-2">
+          <div key={m.id}>
+            <div className="flex items-center gap-2 rounded-xl bg-surface-dim p-3 border border-border">
               <button
                 onClick={() => setOpenPdf(openPdf === m.id ? null : m.id)}
-                className="text-sm font-medium text-primary hover:underline truncate max-w-[200px] sm:max-w-none"
+                className="text-xs font-medium text-primary hover:brightness-110 truncate max-w-[200px] sm:max-w-none"
               >
                 📄 {m.file_name}
               </button>
@@ -44,14 +44,13 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
                 href={m.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-muted hover:text-foreground"
+                className="ml-auto text-[10px] text-muted hover:text-foreground font-bold uppercase tracking-widest"
               >
-                새 탭
+                Open
               </a>
             </div>
-
             {openPdf === m.id && (
-              <div className="mt-3 overflow-hidden rounded-lg border border-border">
+              <div className="mt-2 overflow-hidden rounded-xl border border-border">
                 <iframe
                   src={m.file_url}
                   className="h-[250px] sm:h-[400px] w-full"

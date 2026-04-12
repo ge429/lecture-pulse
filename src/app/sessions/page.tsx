@@ -86,81 +86,74 @@ function SessionsContent() {
   const visibleSessions = sessions.filter((s) => !hiddenIds.has(s.id));
 
   return (
-    <div className="flex flex-1 flex-col px-4 py-8">
-      <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-sm text-muted hover:text-foreground">
-            ← 홈으로
+    <div className="flex flex-1 flex-col px-6 py-8 md:py-12">
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="mb-8 md:mb-12">
+          <Link href="/" className="text-xs text-muted hover:text-foreground font-bold uppercase tracking-widest">
+            ← Back
           </Link>
-          <h1 className="text-lg font-bold">수업 히스토리</h1>
-          <div className="w-12" />
+          <h1 className="mt-4 text-3xl md:text-4xl font-black font-headline text-foreground uppercase tracking-tighter">
+            Session Archive
+          </h1>
+          <p className="mt-1 text-[10px] text-muted uppercase tracking-widest font-mono">
+            {isProfessor ? "Professor Protocol" : "Student Protocol"}
+          </p>
         </div>
 
         {loading ? (
-          <p className="py-12 text-center text-muted">불러오는 중...</p>
+          <p className="py-12 text-center text-muted font-mono text-xs uppercase tracking-widest">Loading Data...</p>
         ) : visibleSessions.length === 0 ? (
-          <div className="py-12 text-center">
+          <div className="py-16 text-center">
             <p className="mb-4 text-muted">
               {isProfessor ? "아직 생성된 수업이 없습니다." : "참여한 수업이 없습니다."}
             </p>
             <Link
               href={isProfessor ? "/session/create" : "/session/join"}
-              className="text-primary hover:underline"
+              className="text-primary hover:brightness-110 font-bold uppercase tracking-wider text-sm"
             >
-              {isProfessor ? "수업 만들기" : "수업 참여하기"}
+              {isProfessor ? "수업 만들기 →" : "수업 참여하기 →"}
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 md:gap-4">
             {visibleSessions.map((s) => (
               <div
                 key={s.id}
-                className="rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-md"
+                className="rounded-2xl border border-border bg-card p-5 md:p-6 transition-all hover:border-primary/30"
               >
                 <div className="mb-2 flex items-center justify-between">
-                  <h2 className="font-semibold text-foreground">{s.name}</h2>
+                  <h2 className="font-bold font-headline text-foreground uppercase tracking-tight">{s.name}</h2>
                   {s.is_active ? (
-                    <span className="rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-bold text-success">
-                      진행 중
+                    <span className="flex items-center gap-1 text-[10px] bg-success/10 text-success px-2 py-0.5 rounded font-bold uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> Live
                     </span>
                   ) : (
-                    <span className="rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-bold text-muted">
-                      종료됨
-                    </span>
+                    <span className="text-[10px] bg-muted/10 text-muted px-2 py-0.5 rounded font-bold uppercase">Ended</span>
                   )}
                 </div>
-                <div className="mb-3 flex items-center gap-3 text-sm text-muted">
-                  <span className="font-mono">{s.code}</span>
+                <div className="mb-3 flex items-center gap-3 text-[10px] text-muted font-mono uppercase tracking-widest">
+                  <span>{s.code}</span>
                   <span>{formatDate(s.created_at)}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {isProfessor && s.is_active && (
-                    <Link
-                      href={`/session/${s.code}/dashboard`}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-hover"
-                    >
-                      대시보드
+                    <Link href={`/session/${s.code}/dashboard`} className="rounded-full bg-primary text-background px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all">
+                      Dashboard
                     </Link>
                   )}
                   {!isProfessor && s.is_active && (
-                    <Link
-                      href={`/session/${s.code}/student`}
-                      className="rounded-lg bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success/90"
-                    >
-                      다시 참여
+                    <Link href={`/session/${s.code}/student`} className="rounded-full bg-success text-background px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all">
+                      Rejoin
                     </Link>
                   )}
-                  <Link
-                    href={`/session/${s.code}/report`}
-                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-background"
-                  >
-                    리포트
+                  <Link href={`/session/${s.code}/report`} className="rounded-full border border-border text-foreground px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:border-primary/50 transition-all">
+                    Report
                   </Link>
                   <button
                     onClick={() => handleHide(s.id)}
-                    className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-danger hover:bg-danger/5"
+                    className="ml-auto text-[10px] font-bold text-muted hover:text-danger uppercase tracking-widest transition-colors"
                   >
-                    숨기기
+                    Hide
                   </button>
                 </div>
               </div>
