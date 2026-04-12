@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      setDark(true);
-      document.documentElement.classList.add("dark");
+    if (saved === "light") {
+      setDark(false);
+      document.documentElement.classList.remove("dark");
     }
   }, []);
 
@@ -28,7 +28,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="fixed bottom-4 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-card border border-border shadow-lg transition-colors hover:bg-border/50"
+      className="fixed top-6 right-6 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted hover:text-primary transition-all duration-300 shadow-lg"
       aria-label="테마 전환"
     >
       {dark ? "☀️" : "🌙"}

@@ -43,57 +43,59 @@ export default function CreateSession() {
   };
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <Link
-          href="/"
-          className="mb-8 inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
-        >
-          ← 홈으로
-        </Link>
+    <div className="flex flex-1 flex-col items-center justify-center px-6">
+      <div className="bg-card max-w-md w-full p-10 rounded-2xl border border-border shadow-2xl space-y-8">
+        <div className="text-center">
+          <h2 className="text-3xl font-black font-headline text-foreground mb-2 uppercase tracking-tight">
+            Create Session
+          </h2>
+          <p className="text-muted text-sm uppercase tracking-widest font-mono">
+            Protocol Initialization
+          </p>
+        </div>
 
-        <h1 className="mb-2 text-2xl font-bold">수업 만들기</h1>
-        <p className="mb-8 text-muted">
-          수업을 생성하면 학생들이 참여할 수 있는 코드가 발급됩니다.
-        </p>
-
-        <form onSubmit={handleCreate} className="flex flex-col gap-4">
-          <div>
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div className="space-y-2">
             <label
               htmlFor="title"
-              className="mb-1 block text-sm font-medium text-foreground"
+              className="text-[10px] text-primary uppercase font-bold tracking-widest ml-1"
             >
-              수업 이름
+              Lecture Identity
             </label>
             <input
               id="title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: 데이터구조론 3주차"
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="강의 제목을 입력하세요"
+              className="w-full bg-surface-dim border-none rounded-xl focus:ring-1 focus:ring-primary text-foreground p-4 placeholder:text-muted/40 transition-all"
               autoFocus
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-danger">{error}</p>
-          )}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <button
             type="submit"
             disabled={!title.trim() || isCreating}
-            className="rounded-xl bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-primary to-primary-hover text-background py-4 rounded-xl font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isCreating ? "생성 중..." : "수업 시작하기"}
+            {isCreating ? "Generating..." : "Generate Access Link"}
           </button>
+
+          <Link
+            href="/"
+            className="w-full text-muted text-xs font-bold hover:text-foreground transition-colors block text-center"
+          >
+            CANCEL_REQUEST
+          </Link>
         </form>
 
         <Link
           href="/sessions?role=professor"
-          className="mt-6 inline-block text-sm text-muted hover:text-foreground"
+          className="block text-center text-xs text-muted hover:text-primary transition-colors uppercase tracking-widest"
         >
-          📋 수업 히스토리 보기
+          📋 Session History
         </Link>
       </div>
     </div>

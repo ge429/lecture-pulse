@@ -11,6 +11,12 @@ import ActivePoll from "@/components/ActivePoll";
 import QuestionInput from "@/components/QuestionInput";
 import MaterialViewer from "@/components/MaterialViewer";
 
+const SIGNAL_STYLES: Record<string, { border: string; hover: string; icon: string }> = {
+  understood: { border: "border-success/50", hover: "hover:bg-success/10", icon: "text-success" },
+  confused: { border: "border-primary/50", hover: "hover:bg-primary/10", icon: "text-primary" },
+  lost: { border: "border-danger/50", hover: "hover:bg-danger/10", icon: "text-danger" },
+};
+
 export default function StudentPage({
   params,
 }: {
@@ -84,7 +90,7 @@ export default function StudentPage({
 
   if (error) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <p className="mb-4 text-lg text-danger">{error}</p>
         <Link href="/session/join" className="text-primary hover:underline">다시 참여하기</Link>
       </div>
@@ -94,21 +100,21 @@ export default function StudentPage({
   if (!sessionId) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted">수업 연결 중...</p>
+        <p className="text-muted font-mono text-xs uppercase tracking-widest">Connecting to Neural Network...</p>
       </div>
     );
   }
 
   if (ended) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-10">
           <div className="mb-4 text-4xl">📚</div>
-          <h1 className="mb-2 text-xl font-bold text-foreground">수업이 종료되었습니다</h1>
+          <h1 className="mb-2 text-xl font-black font-headline text-foreground uppercase">Session Terminated</h1>
           <p className="mb-6 text-sm text-muted">수고하셨습니다! 오늘 수업은 여기까지입니다.</p>
           <Link
             href="/"
-            className="inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+            className="inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-bold text-background transition-all hover:brightness-110"
           >
             홈으로 돌아가기
           </Link>
@@ -118,41 +124,58 @@ export default function StudentPage({
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center px-4 pt-8">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-sm text-muted hover:text-foreground">← 나가기</Link>
-          <div className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-mono font-bold text-primary">{code}</div>
+    <div className="flex flex-1 flex-col items-center px-6 py-8">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-xs text-muted hover:text-foreground font-bold uppercase tracking-widest">
+            ← Terminate
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-[10px] text-muted font-mono tracking-widest uppercase">{code}</span>
+          </div>
         </div>
 
-        <div className="mb-8 text-center">
-          <h1 className="mb-1 text-xl font-bold">수업 진행 중</h1>
-          <p className="text-sm text-muted">현재 이해도를 선택해주세요</p>
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-black font-headline text-foreground uppercase">Neural Bio-Link Active</h1>
+          <p className="text-muted text-[10px] font-mono tracking-widest uppercase">Transmitting Telemetry</p>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {SIGNALS.map((signal) => (
-            <button
-              key={signal.id}
-              onClick={() => handleSignal(signal.id)}
-              disabled={selected !== null}
-              className={`flex items-center gap-3 sm:gap-4 rounded-2xl ${signal.color} px-4 py-4 sm:px-6 sm:py-6 min-h-[60px] sm:min-h-[72px] text-white transition-all active:scale-[0.97] ${signal.hoverColor} disabled:opacity-70 ${
-                selected === signal.id ? `ring-4 ${signal.ringColor} scale-[0.98]` : ""
-              } ${lastSent === signal.id && selected === null ? "ring-2 ring-white/50" : ""}`}
-            >
-              <span className="text-2xl sm:text-3xl">{signal.emoji}</span>
-              <span className="text-lg sm:text-xl font-bold">{signal.label}</span>
-              {selected === signal.id && (
-                <span className="ml-auto text-sm font-medium opacity-80">전송됨!</span>
-              )}
-            </button>
-          ))}
+        <div className="space-y-4">
+          {SIGNALS.map((signal) => {
+            const style = SIGNAL_STYLES[signal.id] || SIGNAL_STYLES.understood;
+            const isSelected = selected === signal.id;
+            const wasLast = lastSent === signal.id && selected === null;
+
+            return (
+              <button
+                key={signal.id}
+                onClick={() => handleSignal(signal.id)}
+                disabled={selected !== null}
+                className={`group w-full h-28 sm:h-32 bg-card ${style.hover} border ${
+                  isSelected ? style.border + " scale-[0.97]" : wasLast ? style.border : "border-border"
+                } rounded-3xl transition-all duration-300 flex flex-col items-center justify-center gap-2 disabled:opacity-70`}
+              >
+                <span className={`text-3xl sm:text-4xl ${style.icon} group-hover:scale-110 transition-transform`}>
+                  {signal.emoji}
+                </span>
+                <span className="text-lg sm:text-xl font-black text-foreground uppercase tracking-widest">
+                  {signal.label}
+                </span>
+                {isSelected && (
+                  <span className="text-[10px] text-muted font-mono">SIGNAL_TRANSMITTED</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {lastSent && selected === null && (
-          <p className="mt-6 text-center text-sm text-muted">
-            마지막 응답: {SIGNALS.find((s) => s.id === lastSent)?.label} — 언제든 다시 보낼 수 있어요
-          </p>
+          <div className="bg-surface-dim p-4 rounded-2xl border border-border">
+            <p className="text-[10px] text-muted font-mono uppercase tracking-widest">
+              Last Signal: {SIGNALS.find((s) => s.id === lastSent)?.label}
+            </p>
+          </div>
         )}
 
         <MaterialViewer sessionId={sessionId} />

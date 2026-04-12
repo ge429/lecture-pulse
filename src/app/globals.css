@@ -1,29 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --success: #22c55e;
+  --background: #f6f5f8;
+  --foreground: #302f3b;
+  --primary: #5d3fe0;
+  --primary-hover: #441cc8;
+  --success: #00bd85;
   --warning: #f59e0b;
-  --danger: #ef4444;
+  --danger: #ff516a;
   --card: #ffffff;
-  --muted: #64748b;
-  --border: #e2e8f0;
+  --muted: #928ea1;
+  --border: #e4e1f0;
+  --surface-dim: #eae8f0;
+  --surface-container: #f0eef6;
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --primary: #818cf8;
-  --primary-hover: #6366f1;
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --danger: #f87171;
-  --card: #1e293b;
-  --muted: #94a3b8;
-  --border: #334155;
+  --background: #0d0d17;
+  --foreground: #e4e1f0;
+  --primary: #c9bfff;
+  --primary-hover: #917eff;
+  --success: #45dfa4;
+  --warning: #f59e0b;
+  --danger: #ff516a;
+  --card: #1b1b25;
+  --muted: #928ea1;
+  --border: #34343f;
+  --surface-dim: #12121d;
+  --surface-container: #1f1f29;
 }
 
 @theme inline {
@@ -37,12 +41,24 @@
   --color-card: var(--card);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-container: var(--surface-container);
   --font-sans: var(--font-geist-sans);
+  --font-headline: var(--font-sora);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+.grainy-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
 }
 
 @keyframes toastIn {

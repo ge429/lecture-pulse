@@ -35,58 +35,60 @@ export default function JoinSession() {
   };
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <Link
-          href="/"
-          className="mb-8 inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
-        >
-          ← 홈으로
-        </Link>
+    <div className="flex flex-1 flex-col items-center justify-center px-6">
+      <div className="bg-card max-w-md w-full p-10 rounded-2xl border border-border shadow-2xl space-y-8">
+        <div className="text-center">
+          <h2 className="text-3xl font-black font-headline text-foreground mb-2 uppercase tracking-tight">
+            Sync Pulse
+          </h2>
+          <p className="text-muted text-sm uppercase tracking-widest font-mono">
+            Authentication Required
+          </p>
+        </div>
 
-        <h1 className="mb-2 text-2xl font-bold">수업 참여하기</h1>
-        <p className="mb-8 text-muted">
-          교수님이 알려준 수업 코드를 입력하세요.
-        </p>
-
-        <form onSubmit={handleJoin} className="flex flex-col gap-4">
-          <div>
+        <form onSubmit={handleJoin} className="space-y-4">
+          <div className="space-y-2">
             <label
               htmlFor="code"
-              className="mb-1 block text-sm font-medium text-foreground"
+              className="text-[10px] text-success uppercase font-bold tracking-widest ml-1"
             >
-              수업 코드
+              Access Protocol Code
             </label>
             <input
               id="code"
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="예: ABC123"
+              placeholder="강의 코드 6자리"
               maxLength={6}
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 text-center text-2xl font-mono font-bold tracking-widest text-foreground placeholder:text-muted/60 placeholder:text-lg placeholder:tracking-normal placeholder:font-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full bg-surface-dim border-none rounded-xl focus:ring-1 focus:ring-success text-foreground p-4 placeholder:text-muted/40 transition-all text-center text-2xl tracking-[0.5em] font-black uppercase"
               autoFocus
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-danger">{error}</p>
-          )}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <button
             type="submit"
             disabled={code.length < 6 || isJoining}
-            className="rounded-xl bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-success to-success/80 text-background py-4 rounded-xl font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-success/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isJoining ? "참여 중..." : "수업 참여하기"}
+            {isJoining ? "Connecting..." : "Join Neural Network"}
           </button>
+
+          <Link
+            href="/"
+            className="w-full text-muted text-xs font-bold hover:text-foreground transition-colors block text-center"
+          >
+            DISCONNECT_INTERFACE
+          </Link>
         </form>
 
         <Link
           href="/sessions"
-          className="mt-6 inline-block text-sm text-muted hover:text-foreground"
+          className="block text-center text-xs text-muted hover:text-success transition-colors uppercase tracking-widest"
         >
-          📋 수업 히스토리 보기
+          📋 Session History
         </Link>
       </div>
     </div>
