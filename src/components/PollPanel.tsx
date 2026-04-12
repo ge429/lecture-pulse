@@ -151,17 +151,17 @@ export default function PollPanel({
                   : "bg-primary";
 
                 return (
-                  <div key={opt} className="flex items-center gap-3">
-                    <span className="w-14 text-sm font-bold">
+                  <div key={opt} className="flex items-center gap-2 sm:gap-3">
+                    <span className="w-10 sm:w-14 text-xs sm:text-sm font-bold truncate">
                       {isCorrectOpt && "✅ "}{opt}
                     </span>
-                    <div className="flex-1 h-7 rounded-full bg-border/50 overflow-hidden">
+                    <div className="flex-1 h-5 sm:h-7 rounded-full bg-border/50 overflow-hidden">
                       <div
                         className={`h-full ${barColor} rounded-full transition-all duration-500`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="w-16 text-right text-sm font-bold tabular-nums">
+                    <span className="w-14 sm:w-16 text-right text-xs sm:text-sm font-bold tabular-nums">
                       {count}표 ({pct}%)
                     </span>
                   </div>

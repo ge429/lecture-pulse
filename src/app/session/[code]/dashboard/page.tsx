@@ -478,7 +478,7 @@ export default function DashboardPage({
                 fgColor="#6366f1"
               />
             </div>
-            <p className="text-4xl font-mono font-bold tracking-widest text-primary">{code}</p>
+            <p className="text-2xl sm:text-4xl font-mono font-bold tracking-widest text-primary">{code}</p>
           </div>
         )}
       </div>

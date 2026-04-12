@@ -57,8 +57,8 @@ export default function DonutChart({ stats }: { stats: Stats }) {
     total > 0 ? Math.round(((stats.confused + stats.lost) / total) * 100) : 0;
 
   return (
-    <div className="flex items-center gap-6">
-      <svg width="160" height="160" viewBox="0 0 160 160" className="shrink-0">
+    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+      <svg width="140" height="140" viewBox="0 0 160 160" className="shrink-0 sm:w-[160px] sm:h-[160px]">
         {total === 0 ? (
           <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="#e2e8f0" strokeWidth={innerR - 4} />
         ) : (

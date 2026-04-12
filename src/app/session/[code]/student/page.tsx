@@ -136,12 +136,12 @@ export default function StudentPage({
               key={signal.id}
               onClick={() => handleSignal(signal.id)}
               disabled={selected !== null}
-              className={`flex items-center gap-4 rounded-2xl ${signal.color} px-6 py-6 min-h-[72px] text-white transition-all active:scale-[0.97] ${signal.hoverColor} disabled:opacity-70 ${
+              className={`flex items-center gap-3 sm:gap-4 rounded-2xl ${signal.color} px-4 py-4 sm:px-6 sm:py-6 min-h-[60px] sm:min-h-[72px] text-white transition-all active:scale-[0.97] ${signal.hoverColor} disabled:opacity-70 ${
                 selected === signal.id ? `ring-4 ${signal.ringColor} scale-[0.98]` : ""
               } ${lastSent === signal.id && selected === null ? "ring-2 ring-white/50" : ""}`}
             >
-              <span className="text-3xl">{signal.emoji}</span>
-              <span className="text-xl font-bold">{signal.label}</span>
+              <span className="text-2xl sm:text-3xl">{signal.emoji}</span>
+              <span className="text-lg sm:text-xl font-bold">{signal.label}</span>
               {selected === signal.id && (
                 <span className="ml-auto text-sm font-medium opacity-80">전송됨!</span>
               )}

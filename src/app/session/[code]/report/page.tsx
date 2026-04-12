@@ -189,7 +189,7 @@ export default function ReportPage({
         )}
 
         {/* 핵심 지표 */}
-        <div className="mb-6 grid grid-cols-3 gap-3">
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-2xl border border-border bg-card p-4 text-center">
             <div className="text-2xl font-bold">{stats.uniqueStudents}</div>
             <div className="text-xs text-muted">참여 학생</div>

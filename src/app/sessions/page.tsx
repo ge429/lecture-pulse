@@ -133,7 +133,7 @@ function SessionsContent() {
                   <span className="font-mono">{s.code}</span>
                   <span>{formatDate(s.created_at)}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {isProfessor && s.is_active && (
                     <Link
                       href={`/session/${s.code}/dashboard`}

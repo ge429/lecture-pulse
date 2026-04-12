@@ -36,7 +36,7 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setOpenPdf(openPdf === m.id ? null : m.id)}
-                className="text-sm font-medium text-primary hover:underline"
+                className="text-sm font-medium text-primary hover:underline truncate max-w-[200px] sm:max-w-none"
               >
                 📄 {m.file_name}
               </button>
@@ -54,7 +54,7 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
               <div className="mt-3 overflow-hidden rounded-lg border border-border">
                 <iframe
                   src={m.file_url}
-                  className="h-[400px] w-full"
+                  className="h-[250px] sm:h-[400px] w-full"
                   title={m.file_name}
                 />
               </div>

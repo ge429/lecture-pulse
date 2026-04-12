@@ -104,7 +104,7 @@ export default function MaterialUpload({
                   href={m.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium text-primary hover:underline"
+                  className="text-sm font-medium text-primary hover:underline truncate max-w-[200px] sm:max-w-none"
                 >
                   📄 {m.file_name}
                 </a>
