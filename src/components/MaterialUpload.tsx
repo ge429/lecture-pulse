@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "./LocaleProvider";
 
 interface Material {
   id: string;
@@ -19,6 +20,7 @@ export default function MaterialUpload({
   materials: Material[];
   onUploaded: () => void;
 }) {
+  const { t } = useLocale();
   const [uploading, setUploading] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -97,11 +99,11 @@ export default function MaterialUpload({
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h4 className="font-black text-foreground uppercase tracking-tight text-sm">Lecture Materials</h4>
+          <h4 className="font-black text-foreground uppercase tracking-tight text-sm">{t("comp.materials")}</h4>
           <span className="text-[10px] text-muted">{materials.length} files</span>
         </div>
         <label className="cursor-pointer rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 uppercase tracking-widest transition-all">
-          {uploading ? "Uploading..." : "+ Upload PDF"}
+          {uploading ? t("comp.uploading") : t("comp.upload")}
           <input
             ref={fileRef}
             type="file"
@@ -116,13 +118,13 @@ export default function MaterialUpload({
       {summarizing && (
         <div className="mb-3 rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] text-primary font-bold uppercase tracking-widest">AI가 강의자료를 분석하고 있습니다...</span>
+          <span className="text-[10px] text-primary font-bold uppercase tracking-widest">{t("comp.analyzing")}</span>
         </div>
       )}
 
       {materials.length === 0 ? (
         <p className="py-4 text-center text-xs text-muted font-mono uppercase tracking-widest">
-          No files uploaded
+          {t("comp.noFiles")}
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -138,13 +140,13 @@ export default function MaterialUpload({
                   📄 {m.file_name}
                 </a>
                 <div className="flex items-center gap-2">
-                  {m.summary && <span className="text-[10px] text-success font-bold">✓ 요약됨</span>}
+                  {m.summary && <span className="text-[10px] text-success font-bold">{t("comp.summarized")}</span>}
                   <button
                     onClick={() => handleDelete(m.id, m.file_url)}
                     disabled={deleting === m.id}
                     className="text-[10px] font-bold text-muted hover:text-danger uppercase tracking-widest transition-colors disabled:opacity-50"
                   >
-                    {deleting === m.id ? "..." : "Delete"}
+                    {deleting === m.id ? "..." : t("comp.delete")}
                   </button>
                 </div>
               </div>

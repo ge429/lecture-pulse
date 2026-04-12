@@ -397,9 +397,9 @@ export default function DashboardPage({
                   <p className="text-muted text-[10px] uppercase tracking-widest">{t("dash.biometrics")}</p>
                 </div>
                 <div className="hidden md:flex gap-4 text-[10px] font-bold uppercase tracking-widest">
-                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success" /> Understanding</span>
-                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary" /> Confusion</span>
-                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-danger" /> Lost</span>
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success" /> {t("student.understood")}</span>
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary" /> {t("student.confused")}</span>
+                  <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-danger" /> {t("student.lost")}</span>
                 </div>
               </div>
               {total === 0 ? (

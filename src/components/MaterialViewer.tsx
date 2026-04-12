@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "./LocaleProvider";
 
 interface Material {
   id: string;
@@ -14,6 +15,7 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [openPdf, setOpenPdf] = useState<string | null>(null);
   const [openSummary, setOpenSummary] = useState<string | null>(null);
+  const { t } = useLocale();
 
   useEffect(() => {
     async function load() {
@@ -31,7 +33,7 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="mt-6 rounded-2xl border border-border bg-card p-5">
-      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-3">Lecture Materials</p>
+      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-3">{t("comp.materials")}</p>
       <div className="flex flex-col gap-3">
         {materials.map((m) => (
           <div key={m.id} className="rounded-xl bg-surface-dim p-3 md:p-4 border border-border">
@@ -59,13 +61,13 @@ export default function MaterialViewer({ sessionId }: { sessionId: string }) {
                   onClick={() => setOpenSummary(openSummary === m.id ? null : m.id)}
                   className="rounded-full bg-success/10 px-3 py-1 text-[10px] font-bold text-success hover:bg-success/20 uppercase tracking-widest transition-all"
                 >
-                  {openSummary === m.id ? "요약 닫기" : "📌 AI 핵심 요약 보기"}
+                  {openSummary === m.id ? t("comp.closeSummary") : t("comp.viewSummary")}
                 </button>
               </div>
             )}
             {!m.summary && (
               <div className="mt-2">
-                <span className="text-[10px] text-muted font-mono">요약 생성 대기 중...</span>
+                <span className="text-[10px] text-muted font-mono">{t("comp.summaryWaiting")}</span>
               </div>
             )}
 

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getStudentId } from "@/lib/student";
+import { useLocale } from "./LocaleProvider";
 
 export default function QuestionInput({ sessionId }: { sessionId: string }) {
+  const { t } = useLocale();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -32,13 +34,13 @@ export default function QuestionInput({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="mt-6 rounded-2xl border border-border bg-card p-5">
-      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-3">Signal Queue</p>
+      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-3">{t("comp.signalQueue")}</p>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="질문을 입력하세요"
+          placeholder={t("comp.questionPlaceholder")}
           className="flex-1 rounded-xl bg-surface-dim border-none px-4 py-2.5 text-sm text-foreground placeholder:text-muted/40 focus:ring-1 focus:ring-primary focus:outline-none transition-all"
         />
         <button
@@ -46,11 +48,11 @@ export default function QuestionInput({ sessionId }: { sessionId: string }) {
           disabled={!text.trim() || sending}
           className="shrink-0 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-background transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
         >
-          {sending ? "..." : sent ? "✓" : "Send"}
+          {sending ? "..." : sent ? "✓" : t("comp.sendQuestion")}
         </button>
       </form>
       {sent && (
-        <p className="mt-2 text-[10px] text-success font-mono uppercase tracking-widest">Signal_Transmitted</p>
+        <p className="mt-2 text-[10px] text-success font-mono uppercase tracking-widest">{t("comp.questionSent")}</p>
       )}
     </div>
   );

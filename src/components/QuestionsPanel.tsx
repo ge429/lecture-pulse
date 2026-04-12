@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { CLUSTER_COLORS } from "@/lib/constants";
+import { useLocale } from "./LocaleProvider";
 
 interface Question {
   id: string;
@@ -19,6 +20,7 @@ export default function QuestionsPanel({
   clustering: boolean;
   onCluster: () => void;
 }) {
+  const { t } = useLocale();
   const unclustered = questions.filter((q) => q.cluster_id === null);
   const clustered = questions.filter((q) => q.cluster_id !== null);
 
@@ -36,7 +38,7 @@ export default function QuestionsPanel({
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h4 className="font-black text-foreground uppercase tracking-tight text-sm">Neural Query Queue</h4>
+          <h4 className="font-black text-foreground uppercase tracking-tight text-sm">{t("comp.questions")}</h4>
           <span className="text-[10px] text-muted">{questions.length} active</span>
         </div>
         {unclustered.length >= 2 && (
@@ -45,14 +47,14 @@ export default function QuestionsPanel({
             disabled={clustering}
             className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 disabled:opacity-50 uppercase tracking-widest"
           >
-            {clustering ? "분석 중..." : "🤖 Cluster"}
+            {clustering ? t("comp.clustering") : t("comp.cluster")}
           </button>
         )}
       </div>
 
       {questions.length === 0 ? (
         <p className="py-6 text-center text-xs text-muted font-mono uppercase tracking-widest">
-          No queries received
+          {t("comp.noQueries")}
         </p>
       ) : (
         <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto">

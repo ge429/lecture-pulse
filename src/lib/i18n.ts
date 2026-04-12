@@ -135,6 +135,7 @@ const translations: Record<string, Record<Locale, string>> = {
   "comp.viewSummary": { ko: "📌 AI 핵심 요약 보기", en: "📌 View AI Summary", zh: "📌 查看AI摘要" },
   "comp.closeSummary": { ko: "요약 닫기", en: "Close Summary", zh: "关闭摘要" },
   "comp.summaryWaiting": { ko: "요약 생성 대기 중...", en: "Waiting for summary...", zh: "等待生成摘要..." },
+  "comp.delete": { ko: "삭제", en: "Delete", zh: "删除" },
   // Report
   "report.title": { ko: "수업 리포트", en: "Session Report", zh: "课程报告" },
   "report.back": { ko: "← 대시보드로", en: "← Dashboard", zh: "← 仪表板" },
