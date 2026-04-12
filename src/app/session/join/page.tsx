@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function JoinSession() {
   const router = useRouter();
+  const { t } = useLocale();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
@@ -39,10 +41,10 @@ export default function JoinSession() {
       <div className="bg-card max-w-md w-full p-10 rounded-2xl border border-border shadow-2xl space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-black font-headline text-foreground mb-2 uppercase tracking-tight">
-            Sync Pulse
+            {t("join.title")}
           </h2>
           <p className="text-muted text-sm uppercase tracking-widest font-mono">
-            Authentication Required
+            {t("join.subtitle")}
           </p>
         </div>
 
@@ -59,7 +61,7 @@ export default function JoinSession() {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="강의 코드 6자리"
+              placeholder={t("join.placeholder")}
               maxLength={6}
               className="w-full bg-surface-dim border-none rounded-xl focus:ring-1 focus:ring-success text-foreground p-4 placeholder:text-muted/40 transition-all text-center text-2xl tracking-[0.5em] font-black uppercase"
               autoFocus
@@ -73,7 +75,7 @@ export default function JoinSession() {
             disabled={code.length < 6 || isJoining}
             className="w-full bg-gradient-to-r from-success to-success/80 text-background py-4 rounded-xl font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-success/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isJoining ? "Connecting..." : "Join Neural Network"}
+            {isJoining ? t("join.loading") : t("join.submit")}
           </button>
 
           <Link

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "@/components/LocaleProvider";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -16,6 +17,7 @@ function generateCode(): string {
 
 export default function CreateSession() {
   const router = useRouter();
+  const { t } = useLocale();
   const [title, setTitle] = useState("");
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -47,10 +49,10 @@ export default function CreateSession() {
       <div className="bg-card max-w-md w-full p-10 rounded-2xl border border-border shadow-2xl space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-black font-headline text-foreground mb-2 uppercase tracking-tight">
-            Create Session
+            {t("create.title")}
           </h2>
           <p className="text-muted text-sm uppercase tracking-widest font-mono">
-            Protocol Initialization
+            {t("create.subtitle")}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export default function CreateSession() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="강의 제목을 입력하세요"
+              placeholder={t("create.placeholder")}
               className="w-full bg-surface-dim border-none rounded-xl focus:ring-1 focus:ring-primary text-foreground p-4 placeholder:text-muted/40 transition-all"
               autoFocus
             />
@@ -80,7 +82,7 @@ export default function CreateSession() {
             disabled={!title.trim() || isCreating}
             className="w-full bg-gradient-to-r from-primary to-primary-hover text-background py-4 rounded-xl font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isCreating ? "Generating..." : "Generate Access Link"}
+            {isCreating ? t("create.loading") : t("create.submit")}
           </button>
 
           <Link

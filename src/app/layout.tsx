@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Sora } from "next/font/google";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
+import LocaleProvider from "@/components/LocaleProvider";
+import SettingsMenu from "@/components/SettingsMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,9 +42,11 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${geistSans.variable} ${sora.variable} h-full antialiased dark`}>
       <body className="min-h-full flex flex-col font-sans selection:bg-primary/30 selection:text-foreground">
-        <div className="grainy-overlay" />
-        {children}
-        <ThemeToggle />
+        <LocaleProvider>
+          <div className="grainy-overlay" />
+          {children}
+          <SettingsMenu />
+        </LocaleProvider>
       </body>
     </html>
   );

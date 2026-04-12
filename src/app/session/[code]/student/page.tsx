@@ -10,6 +10,7 @@ import type { ResponseType } from "@/lib/database.types";
 import ActivePoll from "@/components/ActivePoll";
 import QuestionInput from "@/components/QuestionInput";
 import MaterialViewer from "@/components/MaterialViewer";
+import { useLocale } from "@/components/LocaleProvider";
 
 const SIGNAL_STYLES: Record<string, { border: string; hover: string; icon: string }> = {
   understood: { border: "border-success/50", hover: "hover:bg-success/10", icon: "text-success" },
@@ -23,6 +24,7 @@ export default function StudentPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = use(params);
+  const { t } = useLocale();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [lastSent, setLastSent] = useState<string | null>(null);
@@ -110,13 +112,13 @@ export default function StudentPage({
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-10">
           <div className="mb-4 text-4xl">📚</div>
-          <h1 className="mb-2 text-xl font-black font-headline text-foreground uppercase">Session Terminated</h1>
-          <p className="mb-6 text-sm text-muted">수고하셨습니다! 오늘 수업은 여기까지입니다.</p>
+          <h1 className="mb-2 text-xl font-black font-headline text-foreground uppercase">{t("student.ended")}</h1>
+          <p className="mb-6 text-sm text-muted">{t("student.endedDesc")}</p>
           <Link
             href="/"
             className="inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-bold text-background transition-all hover:brightness-110"
           >
-            홈으로 돌아가기
+            {t("student.home")}
           </Link>
         </div>
       </div>
@@ -137,8 +139,8 @@ export default function StudentPage({
         </div>
 
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-black font-headline text-foreground uppercase">Neural Bio-Link Active</h1>
-          <p className="text-muted text-[10px] font-mono tracking-widest uppercase">Transmitting Telemetry</p>
+          <h1 className="text-2xl font-black font-headline text-foreground uppercase">{t("student.active")}</h1>
+          <p className="text-muted text-[10px] font-mono tracking-widest uppercase">{t("student.selectLevel")}</p>
         </div>
 
         <div className="space-y-4">
