@@ -12,6 +12,12 @@ import QuestionInput from "@/components/QuestionInput";
 import MaterialViewer from "@/components/MaterialViewer";
 import { useLocale } from "@/components/LocaleProvider";
 
+const SIGNAL_KEYS: Record<string, string> = {
+  understood: "student.understood",
+  confused: "student.confused",
+  lost: "student.lost",
+};
+
 const SIGNAL_STYLES: Record<string, { border: string; hover: string; icon: string }> = {
   understood: { border: "border-success/50", hover: "hover:bg-success/10", icon: "text-success" },
   confused: { border: "border-primary/50", hover: "hover:bg-primary/10", icon: "text-primary" },
@@ -162,7 +168,7 @@ export default function StudentPage({
                   {signal.emoji}
                 </span>
                 <span className="text-lg sm:text-xl font-black text-foreground uppercase tracking-widest">
-                  {signal.label}
+                  {t(SIGNAL_KEYS[signal.id])}
                 </span>
                 {isSelected && (
                   <span className="text-[10px] text-muted font-mono">SIGNAL_TRANSMITTED</span>
@@ -175,7 +181,7 @@ export default function StudentPage({
         {lastSent && selected === null && (
           <div className="bg-surface-dim p-4 rounded-2xl border border-border">
             <p className="text-[10px] text-muted font-mono uppercase tracking-widest">
-              Last Signal: {SIGNALS.find((s) => s.id === lastSent)?.label}
+              {t(SIGNAL_KEYS[lastSent!])}
             </p>
           </div>
         )}
