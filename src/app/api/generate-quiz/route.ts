@@ -5,22 +5,20 @@ import { callClaude } from "@/lib/anthropic";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
-  const { sessionId } = await req.json();
+  const { sessionId, topic } = await req.json();
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId required" }, { status: 400 });
   }
 
-  // 수업 자료 URL 조회
   const { data: materials } = await supabase
     .from("materials")
     .select("file_url")
     .eq("session_id", sessionId);
 
   if (!materials || materials.length === 0) {
-    return NextResponse.json({ error: "수업 자료가 없습니다. 먼저 PDF를 업로드해주세요." }, { status: 400 });
+    return NextResponse.json({ error: "강의자료를 먼저 업로드해주세요." }, { status: 400 });
   }
 
-  // PDF를 직접 Claude에 전달하여 퀴즈 생성
   const content: Record<string, unknown>[] = [];
   for (const m of materials.slice(0, 3)) {
     content.push({
@@ -28,11 +26,17 @@ export async function POST(req: NextRequest) {
       source: { type: "url", url: m.file_url },
     });
   }
+
+  const topicInstruction = topic
+    ? `특히 "${topic}" 주제에 집중해서 퀴즈를 만들어주세요.`
+    : "강의자료 전체 내용을 바탕으로 퀴즈를 만들어주세요.";
+
   content.push({
     type: "text",
     text: `위 수업 자료를 바탕으로 학생 이해도를 확인할 수 있는 퀴즈를 만들어주세요.
+${topicInstruction}
 
-OX 퀴즈 3개와 객관식 퀴즈 2개를 만들어주세요.
+OX 퀴즈 2개와 4지선다 객관식 1개를 만들어주세요.
 
 응답 형식 (반드시 JSON만 출력, 다른 텍스트 없이):
 {"quizzes": [
@@ -61,7 +65,6 @@ OX 퀴즈 3개와 객관식 퀴즈 2개를 만들어주세요.
 
   let created = 0;
   for (const quiz of quizzes) {
-    // 정답을 options JSON에 _answer 키로 함께 저장
     const optionsWithAnswer = {
       choices: quiz.options,
       _answer: quiz.answer,
@@ -76,5 +79,5 @@ OX 퀴즈 3개와 객관식 퀴즈 2개를 만들어주세요.
     if (!error) created++;
   }
 
-  return NextResponse.json({ created, total: quizzes.length });
+  return NextResponse.json({ quizzes, count: created });
 }

@@ -5,6 +5,7 @@ import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/format";
+import ReactMarkdown from "react-markdown";
 
 interface ReportData {
   session: {
@@ -29,6 +30,7 @@ interface ReportData {
     clusters: { clusterId: number; count: number; questions: string[] }[];
     unclustered: string[];
   };
+  materials: { fileName: string; hasSummary: boolean }[];
   aiSummary: string | null;
 }
 
@@ -162,14 +164,26 @@ export default function ReportPage({
           </p>
         </div>
 
+        {/* 수업 자료 */}
+        {report.materials && report.materials.length > 0 && (
+          <div className="mb-6 rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-3 text-sm font-semibold text-muted uppercase tracking-wide">📚 수업 자료</h2>
+            <div className="flex flex-col gap-1">
+              {report.materials.map((m, i) => (
+                <p key={i} className="text-sm text-foreground">📄 {m.fileName}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* AI 요약 */}
         {report.aiSummary && (
           <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-6">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
               <span>🤖</span> AI 수업 분석
             </h2>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-              {report.aiSummary}
+            <div className="prose prose-sm max-w-none text-foreground">
+              <ReactMarkdown>{report.aiSummary}</ReactMarkdown>
             </div>
           </div>
         )}

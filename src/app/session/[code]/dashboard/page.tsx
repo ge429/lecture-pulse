@@ -36,6 +36,9 @@ export default function DashboardPage({
   const [pollResults, setPollResults] = useState<{ answer: string; count: number }[]>([]);
   const [materials, setMaterials] = useState<{ id: string; file_name: string; file_url: string; summary: string | null }[]>([]);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [copilot, setCopilot] = useState<{ suggestion: string; severity: "warning" | "critical"; suggestQuiz: boolean; quizTopic: string | null } | null>(null);
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const copilotCooldown = useRef<number>(0);
   const [toast, setToast] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -175,23 +178,43 @@ export default function DashboardPage({
     if (sessionId) fetchPendingPolls(sessionId);
   };
 
-  const handleGenerateQuiz = async () => {
+  const handleGenerateQuiz = async (topic?: string) => {
     if (!sessionId || generatingQuiz) return;
     setGeneratingQuiz(true);
     const res = await fetch("/api/generate-quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify({ sessionId, topic }),
     });
     const data = await res.json();
     if (res.ok) {
-      showToast(`🎯 퀴즈 ${data.created}개가 생성되었습니다!`);
+      showToast(`🎯 퀴즈 ${data.count}개가 생성되었습니다!`);
       if (sessionId) fetchPendingPolls(sessionId);
     } else {
       alert(data.error || "퀴즈 생성 실패");
     }
     setGeneratingQuiz(false);
   };
+
+  const triggerCopilot = useCallback(async () => {
+    if (!sessionId || copilotLoading) return;
+    const now = Date.now();
+    if (now - copilotCooldown.current < 180_000) return; // 3분 쿨다운
+    copilotCooldown.current = now;
+    setCopilotLoading(true);
+    try {
+      const res = await fetch("/api/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await res.json();
+      setCopilot(data);
+    } catch {
+      setCopilot(null);
+    }
+    setCopilotLoading(false);
+  }, [sessionId, copilotLoading]);
 
   const showToast = (message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -285,6 +308,14 @@ export default function DashboardPage({
   // ── 렌더링 ───────────────────────────────────────────────────────────────
 
   const total = stats.understood + stats.confused + stats.lost;
+  const confusionRate = total > 0 ? (stats.confused + stats.lost) / total : 0;
+
+  // AI 코파일럿 자동 트리거: 혼란도 40% 이상
+  useEffect(() => {
+    if (isActive && total > 0 && confusionRate >= 0.4) {
+      triggerCopilot();
+    }
+  }, [stats, isActive, total, confusionRate, triggerCopilot]);
 
   if (error) {
     return (
@@ -332,6 +363,36 @@ export default function DashboardPage({
           </div>
         </div>
 
+        {/* AI 코파일럿 */}
+        {(copilot || copilotLoading) && (
+          <div className={`mb-4 rounded-2xl border p-5 ${
+            copilot?.severity === "critical"
+              ? "border-danger/30 bg-danger/5"
+              : "border-warning/30 bg-warning/5"
+          }`}>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-sm font-semibold">
+                {copilot?.severity === "critical" ? "🚨" : "💡"} AI 코파일럿
+              </span>
+              {copilotLoading && <span className="text-xs text-muted">분석 중...</span>}
+            </div>
+            {copilot && (
+              <>
+                <p className="text-sm leading-relaxed text-foreground">{copilot.suggestion}</p>
+                {copilot.suggestQuiz && copilot.quizTopic && (
+                  <button
+                    onClick={() => handleGenerateQuiz(copilot.quizTopic!)}
+                    disabled={generatingQuiz}
+                    className="mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+                  >
+                    {generatingQuiz ? "생성 중..." : `🎯 "${copilot.quizTopic}" 주제로 퀴즈 만들기`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         <div className="mb-4 rounded-2xl border border-border bg-card p-6">
           <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">이해도 분포</h2>
           {total === 0 ? (
@@ -374,7 +435,7 @@ export default function DashboardPage({
         {isActive && materials.length > 0 && (
           <div className="mb-4 flex justify-center">
             <button
-              onClick={handleGenerateQuiz}
+              onClick={() => handleGenerateQuiz()}
               disabled={generatingQuiz}
               className="rounded-xl bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
             >
