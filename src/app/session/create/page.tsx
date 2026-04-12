@@ -62,7 +62,7 @@ export default function CreateSession() {
               htmlFor="title"
               className="text-[10px] text-primary uppercase font-bold tracking-widest ml-1"
             >
-              Lecture Identity
+              {t("create.label")}
             </label>
             <input
               id="title"
@@ -89,7 +89,7 @@ export default function CreateSession() {
             href="/"
             className="w-full text-muted text-xs font-bold hover:text-foreground transition-colors block text-center"
           >
-            CANCEL_REQUEST
+            {t("create.cancel")}
           </Link>
         </form>
 
@@ -97,7 +97,7 @@ export default function CreateSession() {
           href="/sessions?role=professor"
           className="block text-center text-xs text-muted hover:text-primary transition-colors uppercase tracking-widest"
         >
-          📋 Session History
+          {t("create.history")}
         </Link>
       </div>
     </div>

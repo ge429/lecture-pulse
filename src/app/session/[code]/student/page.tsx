@@ -130,7 +130,7 @@ export default function StudentPage({
       <div className="w-full max-w-md space-y-8">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-xs text-muted hover:text-foreground font-bold uppercase tracking-widest">
-            ← Terminate
+            {t("common.back")}
           </Link>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse" />

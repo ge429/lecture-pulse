@@ -54,7 +54,7 @@ export default function JoinSession() {
               htmlFor="code"
               className="text-[10px] text-success uppercase font-bold tracking-widest ml-1"
             >
-              Access Protocol Code
+              {t("join.label")}
             </label>
             <input
               id="code"
@@ -82,7 +82,7 @@ export default function JoinSession() {
             href="/"
             className="w-full text-muted text-xs font-bold hover:text-foreground transition-colors block text-center"
           >
-            DISCONNECT_INTERFACE
+            {t("join.cancel")}
           </Link>
         </form>
 
@@ -90,7 +90,7 @@ export default function JoinSession() {
           href="/sessions"
           className="block text-center text-xs text-muted hover:text-success transition-colors uppercase tracking-widest"
         >
-          📋 Session History
+          {t("join.history")}
         </Link>
       </div>
     </div>
