@@ -12,6 +12,7 @@ import QuestionsPanel from "@/components/QuestionsPanel";
 import PollPanel from "@/components/PollPanel";
 import MaterialUpload from "@/components/MaterialUpload";
 import { QRCodeSVG } from "qrcode.react";
+import { useLocale } from "@/components/LocaleProvider";
 
 interface Stats {
   understood: number;
@@ -25,6 +26,7 @@ export default function DashboardPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = use(params);
+  const { t } = useLocale();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionName, setSessionName] = useState("");
   const [stats, setStats] = useState<Stats>({ understood: 0, confused: 0, lost: 0 });
@@ -357,7 +359,7 @@ export default function DashboardPage({
             <h2 className="text-2xl md:text-4xl font-black font-headline text-foreground uppercase tracking-tighter">{sessionName}</h2>
             <div className="flex flex-wrap gap-2 md:gap-4 mt-2">
               <span className="flex items-center gap-1 text-[10px] bg-success/10 text-success px-2 py-0.5 rounded font-bold uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> Live
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> {t("dash.live")}
               </span>
               <span className="text-[10px] bg-card text-muted px-2 py-0.5 rounded font-bold uppercase tracking-widest border border-border">
                 CODE: {code}
@@ -369,15 +371,15 @@ export default function DashboardPage({
           </div>
           <div className="flex gap-2 md:gap-4">
             <Link href={`/session/${code}/report`} className="bg-card text-foreground px-4 md:px-6 py-2 rounded-full border border-border font-bold text-xs md:text-sm hover:border-primary/50 transition-all uppercase tracking-wider">
-              Report
+              {t("dash.report")}
             </Link>
             {isActive ? (
               <button onClick={handleEndSession} className="bg-danger text-white px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:brightness-110 transition-all uppercase tracking-wider">
-                End Session
+                {t("dash.endSession")}
               </button>
             ) : (
               <Link href="/" className="bg-muted/20 text-muted px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm uppercase tracking-wider">
-                종료됨
+                {t("dash.ended")}
               </Link>
             )}
           </div>
@@ -391,8 +393,8 @@ export default function DashboardPage({
             <div className="bg-card rounded-2xl p-6 md:p-8 border border-border">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="text-lg md:text-xl font-bold font-headline text-foreground">Neural Engagement Pulse</h3>
-                  <p className="text-muted text-[10px] uppercase tracking-widest">Real-time biometrics</p>
+                  <h3 className="text-lg md:text-xl font-bold font-headline text-foreground">{t("dash.engagement")}</h3>
+                  <p className="text-muted text-[10px] uppercase tracking-widest">{t("dash.biometrics")}</p>
                 </div>
                 <div className="hidden md:flex gap-4 text-[10px] font-bold uppercase tracking-widest">
                   <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success" /> Understanding</span>
@@ -401,7 +403,7 @@ export default function DashboardPage({
                 </div>
               </div>
               {total === 0 ? (
-                <p className="py-12 text-center text-muted text-sm">아직 응답이 없습니다. 학생들이 참여하면 여기에 표시됩니다.</p>
+                <p className="py-12 text-center text-muted text-sm">{t("dash.noResponses")}</p>
               ) : (
                 <>
                   <DonutChart stats={stats} />
@@ -433,7 +435,7 @@ export default function DashboardPage({
                   disabled={generatingQuiz}
                   className="rounded-xl bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/20 disabled:opacity-50 uppercase tracking-wider"
                 >
-                  {generatingQuiz ? "Generating..." : "🎯 AI 퀴즈 자동 생성"}
+                  {generatingQuiz ? t("dash.generating") : t("dash.generateQuiz")}
                 </button>
               </div>
             )}
@@ -450,7 +452,7 @@ export default function DashboardPage({
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-primary">🤖</span>
-                <h4 className="font-black text-foreground uppercase tracking-tight text-sm">AI Copilot</h4>
+                <h4 className="font-black text-foreground uppercase tracking-tight text-sm">{t("dash.copilot")}</h4>
                 {copilotLoading && <span className="text-[10px] text-muted animate-pulse">분석 중...</span>}
               </div>
               {copilot ? (
@@ -469,7 +471,7 @@ export default function DashboardPage({
                   )}
                 </div>
               ) : (
-                <p className="text-muted text-xs">혼란도가 높아지면 AI가 자동으로 제안합니다.</p>
+                <p className="text-muted text-xs">{t("dash.copilotHint")}</p>
               )}
             </div>
 
@@ -479,7 +481,7 @@ export default function DashboardPage({
             {/* QR Code */}
             {isActive && (
               <div className="rounded-2xl border border-border bg-card p-6 text-center">
-                <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-4">Access Code</p>
+                <p className="text-[10px] text-muted font-bold uppercase tracking-widest mb-4">{t("dash.accessCode")}</p>
                 <div className="mb-4 flex justify-center">
                   <QRCodeSVG
                     value={`${typeof window !== "undefined" ? window.location.origin : ""}/session/${code}/student`}

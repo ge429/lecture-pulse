@@ -43,7 +43,7 @@ export default function SettingsMenu() {
   };
 
   return (
-    <div ref={menuRef} className="fixed top-6 right-6 z-50">
+    <div ref={menuRef} className="fixed bottom-6 right-6 z-50">
       {/* 더보기 버튼 */}
       <button
         onClick={() => setOpen(!open)}
@@ -55,7 +55,7 @@ export default function SettingsMenu() {
 
       {/* 드롭다운 메뉴 */}
       {open && (
-        <div className="absolute top-14 right-0 w-56 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="absolute bottom-14 right-0 w-56 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden">
           {/* 다크모드 */}
           <button
             onClick={toggleDark}

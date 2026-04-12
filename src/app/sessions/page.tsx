@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getStudentId } from "@/lib/student";
 import { formatDate } from "@/lib/format";
+import { useLocale } from "@/components/LocaleProvider";
 
 interface Session {
   id: string;
@@ -26,6 +27,7 @@ export default function SessionsPage() {
 function SessionsContent() {
   const searchParams = useSearchParams();
   const isProfessor = searchParams.get("role") === "professor";
+  const { t } = useLocale();
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
@@ -93,10 +95,10 @@ function SessionsContent() {
             ← Back
           </Link>
           <h1 className="mt-4 text-3xl md:text-4xl font-black font-headline text-foreground uppercase tracking-tighter">
-            Session Archive
+            {t("history.title")}
           </h1>
           <p className="mt-1 text-[10px] text-muted uppercase tracking-widest font-mono">
-            {isProfessor ? "Professor Protocol" : "Student Protocol"}
+            {isProfessor ? t("history.professor") : t("history.student")}
           </p>
         </div>
 
@@ -105,13 +107,13 @@ function SessionsContent() {
         ) : visibleSessions.length === 0 ? (
           <div className="py-16 text-center">
             <p className="mb-4 text-muted">
-              {isProfessor ? "아직 생성된 수업이 없습니다." : "참여한 수업이 없습니다."}
+              {isProfessor ? t("history.empty.professor") : t("history.empty.student")}
             </p>
             <Link
               href={isProfessor ? "/session/create" : "/session/join"}
               className="text-primary hover:brightness-110 font-bold uppercase tracking-wider text-sm"
             >
-              {isProfessor ? "수업 만들기 →" : "수업 참여하기 →"}
+              {isProfessor ? t("history.create") : t("history.join")}
             </Link>
           </div>
         ) : (
@@ -138,22 +140,22 @@ function SessionsContent() {
                 <div className="flex flex-wrap items-center gap-2">
                   {isProfessor && s.is_active && (
                     <Link href={`/session/${s.code}/dashboard`} className="rounded-full bg-primary text-background px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all">
-                      Dashboard
+                      {t("history.dashboard")}
                     </Link>
                   )}
                   {!isProfessor && s.is_active && (
                     <Link href={`/session/${s.code}/student`} className="rounded-full bg-success text-background px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all">
-                      Rejoin
+                      {t("history.rejoin")}
                     </Link>
                   )}
                   <Link href={`/session/${s.code}/report`} className="rounded-full border border-border text-foreground px-4 py-1.5 text-xs font-bold uppercase tracking-wider hover:border-primary/50 transition-all">
-                    Report
+                    {t("history.report")}
                   </Link>
                   <button
                     onClick={() => handleHide(s.id)}
                     className="ml-auto text-[10px] font-bold text-muted hover:text-danger uppercase tracking-widest transition-colors"
                   >
-                    Hide
+                    {t("history.hide")}
                   </button>
                 </div>
               </div>
