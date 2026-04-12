@@ -21,6 +21,66 @@ ${context}`,
   return result.text;
 }
 
+// ── 통계 계산 헬퍼 ──────────────────────────────────────────────────────────
+
+interface Response {
+  student_id: string;
+  type: string;
+  created_at: string;
+}
+
+function calculateTimeline(responses: Response[]) {
+  const timeline: { time: string; understood: number; confused: number; lost: number }[] = [];
+  if (responses.length === 0) return timeline;
+
+  const start = new Date(responses[0].created_at).getTime();
+  const end = new Date(responses[responses.length - 1].created_at).getTime();
+  const bucketMs = 5 * 60 * 1000;
+
+  for (let t = start; t <= end + bucketMs; t += bucketMs) {
+    const bucketEnd = t + bucketMs;
+    const bucket = responses.filter((r) => {
+      const ts = new Date(r.created_at).getTime();
+      return ts >= t && ts < bucketEnd;
+    });
+    if (bucket.length === 0) continue;
+
+    const latest = new Map<string, string>();
+    for (const r of bucket) latest.set(r.student_id, r.type);
+
+    const counts = { understood: 0, confused: 0, lost: 0 };
+    for (const type of latest.values()) counts[type as keyof typeof counts]++;
+
+    const d = new Date(t);
+    timeline.push({
+      time: `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`,
+      ...counts,
+    });
+  }
+  return timeline;
+}
+
+function buildQuestionClusters(questions: { text: string; cluster_id: number | null }[]) {
+  const clusterMap = new Map<number, string[]>();
+  const unclustered: string[] = [];
+
+  for (const q of questions) {
+    if (q.cluster_id !== null) {
+      const arr = clusterMap.get(q.cluster_id) ?? [];
+      arr.push(q.text);
+      clusterMap.set(q.cluster_id, arr);
+    } else {
+      unclustered.push(q.text);
+    }
+  }
+
+  const clusters = [...clusterMap.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([id, texts]) => ({ clusterId: id, count: texts.length, questions: texts }));
+
+  return { clusters, unclustered };
+}
+
 // ── GET handler ──────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -29,7 +89,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "sessionId required" }, { status: 400 });
   }
 
-  // 세션 정보
   const { data: session } = await supabase
     .from("sessions")
     .select("id, name, code, created_at, is_active")
@@ -40,125 +99,40 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "session not found" }, { status: 404 });
   }
 
-  // 전체 응답
-  const { data: responses } = await supabase
-    .from("responses")
-    .select("student_id, type, created_at")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
-
-  // 전체 질문
-  const { data: questions } = await supabase
-    .from("questions")
-    .select("text, cluster_id, created_at")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
-
-  // 수업 자료
-  const { data: materials } = await supabase
-    .from("materials")
-    .select("file_name, summary")
-    .eq("session_id", sessionId);
+  // 데이터 병렬 조회
+  const [{ data: responses }, { data: questions }, { data: materials }] = await Promise.all([
+    supabase.from("responses").select("student_id, type, created_at").eq("session_id", sessionId).order("created_at", { ascending: true }),
+    supabase.from("questions").select("text, cluster_id, created_at").eq("session_id", sessionId).order("created_at", { ascending: true }),
+    supabase.from("materials").select("file_name, summary").eq("session_id", sessionId),
+  ]);
 
   const allResponses = responses ?? [];
   const allQuestions = questions ?? [];
   const allMaterials = materials ?? [];
 
-  // ── 통계 계산 ──
-
-  // 고유 학생 수
+  // 통계 계산
   const uniqueStudents = new Set(allResponses.map((r) => r.student_id)).size;
-
-  // 전체 타입 분포
   const typeCounts = { understood: 0, confused: 0, lost: 0 };
-  for (const r of allResponses) {
-    typeCounts[r.type as keyof typeof typeCounts]++;
-  }
+  for (const r of allResponses) typeCounts[r.type as keyof typeof typeCounts]++;
 
-  // 시간대별 추이 (5분 단위)
-  const timeline: { time: string; understood: number; confused: number; lost: number }[] = [];
-  if (allResponses.length > 0) {
-    const start = new Date(allResponses[0].created_at).getTime();
-    const end = new Date(allResponses[allResponses.length - 1].created_at).getTime();
-    const bucketMs = 5 * 60 * 1000;
+  const timeline = calculateTimeline(allResponses);
+  const { clusters: questionClusters, unclustered: unclusteredQs } = buildQuestionClusters(allQuestions);
 
-    for (let t = start; t <= end + bucketMs; t += bucketMs) {
-      const bucketEnd = t + bucketMs;
-      const bucket = allResponses.filter((r) => {
-        const ts = new Date(r.created_at).getTime();
-        return ts >= t && ts < bucketEnd;
-      });
-
-      if (bucket.length === 0) continue;
-
-      // 이 구간에서 학생별 마지막 응답
-      const latest = new Map<string, string>();
-      for (const r of bucket) {
-        latest.set(r.student_id, r.type);
-      }
-
-      const counts = { understood: 0, confused: 0, lost: 0 };
-      for (const type of latest.values()) {
-        counts[type as keyof typeof counts]++;
-      }
-
-      const d = new Date(t);
-      timeline.push({
-        time: `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`,
-        ...counts,
-      });
-    }
-  }
-
-  // 질문 군집
-  const clusterMap = new Map<number, string[]>();
-  const unclusteredQs: string[] = [];
-  for (const q of allQuestions) {
-    if (q.cluster_id !== null) {
-      const arr = clusterMap.get(q.cluster_id) ?? [];
-      arr.push(q.text);
-      clusterMap.set(q.cluster_id, arr);
-    } else {
-      unclusteredQs.push(q.text);
-    }
-  }
-
-  const questionClusters = [...clusterMap.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
-    .map(([id, texts]) => ({ clusterId: id, count: texts.length, questions: texts }));
-
-  // ── AI 요약 생성 ──
+  // AI 요약
   const materialSummaries = allMaterials.filter((m) => m.summary).map((m) => m.summary).join("\n");
-
-  const contextForAI = `
-수업명: ${session.name}
+  const contextForAI = `수업명: ${session.name}
 참여 학생: ${uniqueStudents}명
 총 응답: ${allResponses.length}건 (이해됨: ${typeCounts.understood}, 헷갈림: ${typeCounts.confused}, 모르겠음: ${typeCounts.lost})
 시간대별 추이: ${JSON.stringify(timeline)}
 질문 (${allQuestions.length}건): ${allQuestions.map((q) => q.text).join(" / ")}
-수업 자료 (${allMaterials.length}건): ${materialSummaries.slice(0, 3000)}
-`;
+수업 자료 (${allMaterials.length}건): ${materialSummaries.slice(0, 3000)}`;
 
   const aiSummary = await generateAISummary(contextForAI);
 
   return NextResponse.json({
-    session: {
-      name: session.name,
-      code: session.code,
-      createdAt: session.created_at,
-      isActive: session.is_active,
-    },
-    stats: {
-      uniqueStudents,
-      totalResponses: allResponses.length,
-      typeCounts,
-      timeline,
-    },
-    questions: {
-      total: allQuestions.length,
-      clusters: questionClusters,
-      unclustered: unclusteredQs,
-    },
+    session: { name: session.name, code: session.code, createdAt: session.created_at, isActive: session.is_active },
+    stats: { uniqueStudents, totalResponses: allResponses.length, typeCounts, timeline },
+    questions: { total: allQuestions.length, clusters: questionClusters, unclustered: unclusteredQs },
     materials: allMaterials.map((m) => ({ fileName: m.file_name, hasSummary: !!m.summary })),
     aiSummary,
   });

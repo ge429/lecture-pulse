@@ -127,71 +127,14 @@ export default function PollPanel({
       )}
 
       {/* 현재 진행 중인 퀴즈 */}
-      {activePoll && (() => {
-        const choices = getChoices(activePoll.options);
-        const correctAnswer = getAnswer(activePoll.options);
-        const correctCount = correctAnswer
-          ? pollResults.find((r) => r.answer === correctAnswer)?.count ?? 0
-          : null;
-        const wrongCount = correctCount !== null ? totalVotes - correctCount : null;
-
-        return (
-          <div className="mb-4">
-            <p className="mb-3 font-medium text-foreground">
-              {activePoll.question}
-            </p>
-            <div className="flex flex-col gap-2">
-              {choices.map((opt) => {
-                const result = pollResults.find((r) => r.answer === opt);
-                const count = result?.count ?? 0;
-                const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-                const isCorrectOpt = correctAnswer && opt === correctAnswer;
-                const barColor = correctAnswer
-                  ? isCorrectOpt ? "bg-success" : "bg-danger/60"
-                  : "bg-primary";
-
-                return (
-                  <div key={opt} className="flex items-center gap-2 sm:gap-3">
-                    <span className="w-10 sm:w-14 text-xs sm:text-sm font-bold truncate">
-                      {isCorrectOpt && "✅ "}{opt}
-                    </span>
-                    <div className="flex-1 h-5 sm:h-7 rounded-full bg-border/50 overflow-hidden">
-                      <div
-                        className={`h-full ${barColor} rounded-full transition-all duration-500`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-14 sm:w-16 text-right text-xs sm:text-sm font-bold tabular-nums">
-                      {count}표 ({pct}%)
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <div className="flex gap-3 text-xs text-muted">
-                <span>총 {totalVotes}표</span>
-                {correctCount !== null && totalVotes > 0 && (
-                  <>
-                    <span className="text-success font-semibold">정답 {correctCount}명</span>
-                    <span className="text-danger font-semibold">오답 {wrongCount}명</span>
-                  </>
-                )}
-              </div>
-              {activePoll.is_open ? (
-                <button
-                  onClick={onClosePoll}
-                  className="rounded-lg border border-danger px-3 py-1 text-xs font-semibold text-danger hover:bg-danger/5"
-                >
-                  투표 종료
-                </button>
-              ) : (
-                <span className="text-xs font-semibold text-muted">종료됨</span>
-              )}
-            </div>
-          </div>
-        );
-      })()}
+      {activePoll && (
+        <PollResultView
+          poll={activePoll}
+          pollResults={pollResults}
+          totalVotes={totalVotes}
+          onClosePoll={onClosePoll}
+        />
+      )}
 
       {/* 대기 중인 퀴즈 목록 */}
       {pendingPolls.length > 0 && (
@@ -229,6 +172,73 @@ export default function PollPanel({
           퀴즈를 만들어 학생들의 이해도를 확인해보세요.
         </p>
       )}
+    </div>
+  );
+}
+
+function PollResultView({
+  poll,
+  pollResults,
+  totalVotes,
+  onClosePoll,
+}: {
+  poll: Poll;
+  pollResults: PollResult[];
+  totalVotes: number;
+  onClosePoll: () => void;
+}) {
+  const choices = getChoices(poll.options);
+  const correctAnswer = getAnswer(poll.options);
+  const correctCount = correctAnswer
+    ? pollResults.find((r) => r.answer === correctAnswer)?.count ?? 0
+    : null;
+  const wrongCount = correctCount !== null ? totalVotes - correctCount : null;
+
+  return (
+    <div className="mb-4">
+      <p className="mb-3 font-medium text-foreground">{poll.question}</p>
+      <div className="flex flex-col gap-2">
+        {choices.map((opt) => {
+          const count = pollResults.find((r) => r.answer === opt)?.count ?? 0;
+          const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          const isCorrectOpt = correctAnswer && opt === correctAnswer;
+          const barColor = correctAnswer
+            ? isCorrectOpt ? "bg-success" : "bg-danger/60"
+            : "bg-primary";
+
+          return (
+            <div key={opt} className="flex items-center gap-2 sm:gap-3">
+              <span className="w-10 sm:w-14 text-xs sm:text-sm font-bold truncate">
+                {isCorrectOpt && "✅ "}{opt}
+              </span>
+              <div className="flex-1 h-5 sm:h-7 rounded-full bg-border/50 overflow-hidden">
+                <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+              </div>
+              <span className="w-14 sm:w-16 text-right text-xs sm:text-sm font-bold tabular-nums">
+                {count}표 ({pct}%)
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex gap-3 text-xs text-muted">
+          <span>총 {totalVotes}표</span>
+          {correctCount !== null && totalVotes > 0 && (
+            <>
+              <span className="text-success font-semibold">정답 {correctCount}명</span>
+              <span className="text-danger font-semibold">오답 {wrongCount}명</span>
+            </>
+          )}
+        </div>
+        {poll.is_open ? (
+          <button onClick={onClosePoll} className="rounded-lg border border-danger px-3 py-1 text-xs font-semibold text-danger hover:bg-danger/5">
+            투표 종료
+          </button>
+        ) : (
+          <span className="text-xs font-semibold text-muted">종료됨</span>
+        )}
+      </div>
     </div>
   );
 }

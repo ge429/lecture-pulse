@@ -24,57 +24,60 @@ export default function MaterialUpload({
   const [deleting, setDeleting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const uploadToStorage = async (file: File) => {
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const filePath = `${sessionId}/${Date.now()}_${safeName}`;
+
+    const { error } = await supabase.storage
+      .from("materials")
+      .upload(filePath, file, { contentType: "application/pdf" });
+
+    if (error) throw new Error(error.message);
+
+    const { data } = supabase.storage.from("materials").getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const saveToDb = async (fileName: string, fileUrl: string) => {
+    const { data } = await supabase.from("materials")
+      .insert({ session_id: sessionId, file_name: fileName, file_url: fileUrl })
+      .select("id").single();
+    return data?.id ?? null;
+  };
+
+  const generateSummary = async (materialId: string, fileUrl: string, fileName: string) => {
+    setSummarizing(true);
+    try {
+      const res = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileUrl, fileName }),
+      });
+      if (res.ok) {
+        const { summary } = await res.json();
+        await supabase.from("materials").update({ summary }).eq("id", materialId);
+        onUploaded();
+      }
+    } catch { /* 요약 실패해도 업로드는 성공 */ }
+    setSummarizing(false);
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.name.endsWith(".pdf")) return;
 
     setUploading(true);
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const filePath = `${sessionId}/${Date.now()}_${safeName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("materials")
-      .upload(filePath, file, { contentType: "application/pdf" });
-
-    if (uploadError) {
-      alert(`파일 업로드 실패: ${uploadError.message}`);
+    try {
+      const fileUrl = await uploadToStorage(file);
+      const materialId = await saveToDb(file.name, fileUrl);
       setUploading(false);
-      return;
-    }
+      if (fileRef.current) fileRef.current.value = "";
+      onUploaded();
 
-    const { data: urlData } = supabase.storage
-      .from("materials")
-      .getPublicUrl(filePath);
-
-    const { data: inserted } = await supabase.from("materials").insert({
-      session_id: sessionId,
-      file_name: file.name,
-      file_url: urlData.publicUrl,
-    }).select("id").single();
-
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
-    onUploaded();
-
-    // 자동 AI 요약 생성
-    if (inserted) {
-      setSummarizing(true);
-      try {
-        const res = await fetch("/api/summarize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileUrl: urlData.publicUrl, fileName: file.name }),
-        });
-        if (res.ok) {
-          const { summary } = await res.json();
-          await supabase.from("materials").update({ summary }).eq("id", inserted.id);
-          onUploaded();
-        }
-      } catch {
-        // 요약 실패해도 업로드는 성공
-      }
-      setSummarizing(false);
+      if (materialId) generateSummary(materialId, fileUrl, file.name);
+    } catch (err) {
+      alert(`파일 업로드 실패: ${err instanceof Error ? err.message : "알 수 없는 오류"}`);
+      setUploading(false);
     }
   };
 
