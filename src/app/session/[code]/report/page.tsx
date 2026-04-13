@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/format";
 import ReactMarkdown from "react-markdown";
+import { useLocale } from "@/components/LocaleProvider";
 
 interface ReportData {
   session: {
@@ -33,8 +34,6 @@ interface ReportData {
   materials: { fileName: string; hasSummary: boolean }[];
   aiSummary: string | null;
 }
-
-// ── 타임라인 바 차트 ──────────────────────────────────────────────────────────
 
 function TimelineChart({
   timeline,
@@ -74,21 +73,19 @@ function TimelineChart({
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function ReportPage({
   params,
 }: {
   params: Promise<{ code: string }>;
 }) {
   const { code } = use(params);
+  const { t } = useLocale();
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
-      // 세션 ID 조회
       const { data: session } = await supabase
         .from("sessions")
         .select("id")
@@ -103,7 +100,7 @@ export default function ReportPage({
 
       const res = await fetch(`/api/report?sessionId=${session.id}`);
       if (!res.ok) {
-        setError("리포트 생성에 실패했습니다.");
+        setError(t("report.error"));
         setLoading(false);
         return;
       }
@@ -112,23 +109,21 @@ export default function ReportPage({
       setLoading(false);
     }
     load();
-  }, [code]);
+  }, [code, t]);
 
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted">리포트 생성 중...</p>
+        <p className="text-muted font-mono text-xs uppercase tracking-widest">{t("report.loading")}</p>
       </div>
     );
   }
 
   if (error || !report) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4">
+      <div className="flex flex-1 flex-col items-center justify-center px-6">
         <p className="mb-4 text-danger">{error}</p>
-        <Link href="/" className="text-primary hover:underline">
-          홈으로
-        </Link>
+        <Link href="/" className="text-primary hover:underline">{t("student.home")}</Link>
       </div>
     );
   }
@@ -148,26 +143,28 @@ export default function ReportPage({
   const dateStr = formatDate(report.session.createdAt).split(" ")[0];
 
   return (
-    <div className="flex flex-1 flex-col px-4 py-8">
-      <div className="mx-auto w-full max-w-2xl">
-        {/* 헤더 */}
-        <div className="mb-8">
+    <div className="flex flex-1 flex-col p-4 md:p-8">
+      <div className="mx-auto w-full max-w-4xl space-y-6">
+        {/* Header */}
+        <div>
           <Link
             href={`/session/${code}/dashboard`}
-            className="mb-4 inline-flex text-sm text-muted hover:text-foreground"
+            className="text-xs text-muted hover:text-foreground font-bold uppercase tracking-widest"
           >
-            ← 대시보드로
+            {t("report.back")}
           </Link>
-          <h1 className="text-2xl font-bold">{report.session.name}</h1>
-          <p className="text-sm text-muted">
-            {dateStr} &middot; 코드: {code}
+          <h1 className="mt-4 text-2xl md:text-4xl font-black font-headline text-foreground uppercase tracking-tighter">
+            {report.session.name}
+          </h1>
+          <p className="mt-1 text-[10px] text-muted font-mono uppercase tracking-widest">
+            {dateStr} &middot; {code}
           </p>
         </div>
 
-        {/* 수업 자료 */}
+        {/* Materials */}
         {report.materials && report.materials.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-3 text-sm font-semibold text-muted uppercase tracking-wide">📚 수업 자료</h2>
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-3 text-[10px] font-bold text-muted uppercase tracking-widest">{t("report.materials")}</h2>
             <div className="flex flex-col gap-1">
               {report.materials.map((m, i) => (
                 <p key={i} className="text-sm text-foreground">📄 {m.fileName}</p>
@@ -176,78 +173,55 @@ export default function ReportPage({
           </div>
         )}
 
-        {/* AI 요약 */}
+        {/* AI Summary */}
         {report.aiSummary && (
-          <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-6">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
-              <span>🤖</span> AI 수업 분석
-            </h2>
-            <div className="prose prose-sm max-w-none text-foreground">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-6 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
+            <h2 className="mb-3 text-sm font-bold text-primary">{t("report.aiAnalysis")}</h2>
+            <div className="prose prose-sm prose-invert max-w-none text-foreground">
               <ReactMarkdown>{report.aiSummary}</ReactMarkdown>
             </div>
           </div>
         )}
 
-        {/* 핵심 지표 */}
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-border bg-card p-4 text-center">
-            <div className="text-2xl font-bold">{stats.uniqueStudents}</div>
-            <div className="text-xs text-muted">참여 학생</div>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div className="text-3xl font-black text-foreground">{stats.uniqueStudents}</div>
+            <div className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">{t("report.students")}</div>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-4 text-center">
-            <div className="text-2xl font-bold">{stats.totalResponses}</div>
-            <div className="text-xs text-muted">총 응답</div>
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div className="text-3xl font-black text-foreground">{stats.totalResponses}</div>
+            <div className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">{t("report.responses")}</div>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-4 text-center">
-            <div
-              className={`text-2xl font-bold ${confusionRate > 50 ? "text-danger" : confusionRate > 30 ? "text-warning" : "text-success"}`}
-            >
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div className={`text-3xl font-black ${confusionRate > 50 ? "text-danger" : confusionRate > 30 ? "text-warning" : "text-success"}`}>
               {confusionRate}%
             </div>
-            <div className="text-xs text-muted">혼란도</div>
+            <div className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">{t("report.confusion")}</div>
           </div>
         </div>
 
-        {/* 이해도 분포 */}
-        <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-          <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">
-            이해도 분포
+        {/* Understanding Distribution */}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-[10px] font-bold text-muted uppercase tracking-widest">
+            {t("report.distribution")}
           </h2>
           <div className="flex flex-col gap-3">
             {[
-              {
-                label: "이해됨",
-                emoji: "✅",
-                count: stats.typeCounts.understood,
-                color: "bg-success",
-              },
-              {
-                label: "헷갈림",
-                emoji: "🤔",
-                count: stats.typeCounts.confused,
-                color: "bg-warning",
-              },
-              {
-                label: "모르겠음",
-                emoji: "❌",
-                count: stats.typeCounts.lost,
-                color: "bg-danger",
-              },
+              { label: t("student.understood"), emoji: "✅", count: stats.typeCounts.understood, color: "bg-success" },
+              { label: t("student.confused"), emoji: "🤔", count: stats.typeCounts.confused, color: "bg-warning" },
+              { label: t("student.lost"), emoji: "❌", count: stats.typeCounts.lost, color: "bg-danger" },
             ].map((item) => {
               const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
               return (
                 <div key={item.label} className="flex items-center gap-3">
-                  <span className="w-20 text-sm">
-                    {item.emoji} {item.label}
-                  </span>
-                  <div className="flex-1 h-6 rounded-full bg-border/50 overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full`}
-                      style={{ width: `${pct}%` }}
-                    />
+                  <span className="w-20 text-sm text-foreground">{item.emoji} {item.label}</span>
+                  <div className="flex-1 h-6 rounded-full bg-border/30 overflow-hidden">
+                    <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="w-20 text-right text-sm font-bold tabular-nums">
-                    {item.count}건 ({pct}%)
+                  <span className="w-20 text-right text-sm font-bold tabular-nums text-muted">
+                    {item.count}{t("chart.people")} ({pct}%)
                   </span>
                 </div>
               );
@@ -255,73 +229,50 @@ export default function ReportPage({
           </div>
         </div>
 
-        {/* 시간대별 추이 */}
+        {/* Timeline */}
         {stats.timeline.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-1 text-sm font-semibold text-muted uppercase tracking-wide">
-              시간대별 추이
-            </h2>
-            <p className="mb-4 text-xs text-muted">5분 단위 집계</p>
-            <div className="mb-2 flex gap-3 text-xs text-muted">
-              <span>
-                <span className="mr-1 inline-block h-2 w-2 rounded-full bg-success" />
-                이해됨
-              </span>
-              <span>
-                <span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning" />
-                헷갈림
-              </span>
-              <span>
-                <span className="mr-1 inline-block h-2 w-2 rounded-full bg-danger" />
-                모르겠음
-              </span>
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-1 text-[10px] font-bold text-muted uppercase tracking-widest">{t("report.timeline")}</h2>
+            <p className="mb-4 text-[10px] text-muted">{t("report.bucket")}</p>
+            <div className="mb-2 flex gap-3 text-[10px] text-muted">
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-success" />{t("student.understood")}</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning" />{t("student.confused")}</span>
+              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-danger" />{t("student.lost")}</span>
             </div>
             <TimelineChart timeline={stats.timeline} />
           </div>
         )}
 
-        {/* 질문 요약 */}
+        {/* Questions */}
         {questions.total > 0 && (
-          <div className="mb-6 rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 text-sm font-semibold text-muted uppercase tracking-wide">
-              학생 질문 ({questions.total}건)
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 text-[10px] font-bold text-muted uppercase tracking-widest">
+              {t("report.questions")} ({questions.total})
             </h2>
 
             {questions.clusters.map((cluster, i) => (
-              <div key={cluster.clusterId} className="mb-4 rounded-xl bg-background p-4">
+              <div key={cluster.clusterId} className="mb-4 rounded-xl bg-surface-dim p-4 border-l-2 border-primary">
                 <div className="mb-2 flex items-center gap-2">
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                    그룹 {i + 1}
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                    Group {i + 1}
                   </span>
-                  <span className="text-xs text-muted">
-                    {cluster.count}명이 비슷한 질문
-                  </span>
+                  <span className="text-[10px] text-muted">{cluster.count}{t("chart.people")}</span>
                 </div>
                 <ul className="flex flex-col gap-1">
                   {cluster.questions.map((q, qi) => (
-                    <li key={qi} className="text-sm">
-                      &ldquo;{q}&rdquo;
-                    </li>
+                    <li key={qi} className="text-sm text-foreground">&ldquo;{q}&rdquo;</li>
                   ))}
                 </ul>
               </div>
             ))}
 
             {questions.unclustered.length > 0 && (
-              <div>
-                {questions.clusters.length > 0 && (
-                  <p className="mb-2 text-xs text-muted">기타 질문</p>
-                )}
-                <ul className="flex flex-col gap-2">
-                  {questions.unclustered.map((q, i) => (
-                    <li
-                      key={i}
-                      className="rounded-lg bg-background px-4 py-2 text-sm"
-                    >
-                      &ldquo;{q}&rdquo;
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex flex-col gap-2">
+                {questions.unclustered.map((q, i) => (
+                  <div key={i} className="rounded-xl bg-surface-dim px-4 py-2.5 text-sm text-foreground">
+                    &ldquo;{q}&rdquo;
+                  </div>
+                ))}
               </div>
             )}
           </div>

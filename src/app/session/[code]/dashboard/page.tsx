@@ -265,7 +265,7 @@ export default function DashboardPage({
       }
     }
     loadSession();
-  }, [code, fetchStats, fetchQuestions, fetchPollResults]);
+  }, [code, fetchStats, fetchQuestions, fetchPollResults, fetchMaterials, fetchPendingPolls]);
 
   // ── Realtime 구독 ────────────────────────────────────────────────────────
 
@@ -285,14 +285,17 @@ export default function DashboardPage({
       })
       .subscribe();
 
-    const interval = setInterval(() => fetchStats(sessionId, isActive), POLL_INTERVAL);
+    const interval = setInterval(() => {
+      fetchStats(sessionId, isActive);
+      fetchQuestions(sessionId);
+    }, POLL_INTERVAL);
 
     return () => {
       supabase.removeChannel(responsesChannel);
       supabase.removeChannel(questionsChannel);
       clearInterval(interval);
     };
-  }, [sessionId, fetchStats, fetchQuestions]);
+  }, [sessionId, isActive, fetchStats, fetchQuestions]);
 
   useEffect(() => {
     if (!activePoll?.id || !activePoll.is_open) return;
