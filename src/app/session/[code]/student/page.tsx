@@ -132,63 +132,81 @@ export default function StudentPage({
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center px-6 py-8">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="flex flex-1 flex-col px-4 md:px-8 py-8">
+      <div className="w-full max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 md:mb-8">
           <Link href="/" className="text-xs text-muted hover:text-foreground font-bold uppercase tracking-widest">
             {t("common.back")}
           </Link>
+          <div className="text-center">
+            <h1 className="text-xl md:text-2xl font-black font-headline text-foreground uppercase">{t("student.active")}</h1>
+            <p className="text-muted text-[10px] font-mono tracking-widest uppercase">{t("student.selectLevel")}</p>
+          </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
             <span className="text-[10px] text-muted font-mono tracking-widest uppercase">{code}</span>
           </div>
         </div>
 
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-black font-headline text-foreground uppercase">{t("student.active")}</h1>
-          <p className="text-muted text-[10px] font-mono tracking-widest uppercase">{t("student.selectLevel")}</p>
-        </div>
+        {/* Main Grid: mobile=1col, PC=2col */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left: Signal Buttons */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Mobile: vertical stack, PC: horizontal 3-col */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {SIGNALS.map((signal) => {
+                const style = SIGNAL_STYLES[signal.id] || SIGNAL_STYLES.understood;
+                const isSelected = selected === signal.id;
+                const wasLast = lastSent === signal.id && selected === null;
 
-        <div className="space-y-4">
-          {SIGNALS.map((signal) => {
-            const style = SIGNAL_STYLES[signal.id] || SIGNAL_STYLES.understood;
-            const isSelected = selected === signal.id;
-            const wasLast = lastSent === signal.id && selected === null;
+                return (
+                  <button
+                    key={signal.id}
+                    onClick={() => handleSignal(signal.id)}
+                    disabled={selected !== null}
+                    className={`group w-full h-28 md:h-40 lg:h-48 bg-card ${style.hover} border ${
+                      isSelected ? style.border + " scale-[0.97]" : wasLast ? style.border : "border-border"
+                    } rounded-3xl transition-all duration-300 flex flex-col items-center justify-center gap-3 disabled:opacity-70`}
+                  >
+                    <span className={`text-4xl md:text-5xl lg:text-6xl ${style.icon} group-hover:scale-110 transition-transform`}>
+                      {signal.emoji}
+                    </span>
+                    <span className="text-lg md:text-xl font-black text-foreground uppercase tracking-widest">
+                      {t(SIGNAL_KEYS[signal.id])}
+                    </span>
+                    {isSelected && (
+                      <span className="text-[10px] text-muted font-mono">SIGNAL_TRANSMITTED</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            return (
-              <button
-                key={signal.id}
-                onClick={() => handleSignal(signal.id)}
-                disabled={selected !== null}
-                className={`group w-full h-28 sm:h-32 bg-card ${style.hover} border ${
-                  isSelected ? style.border + " scale-[0.97]" : wasLast ? style.border : "border-border"
-                } rounded-3xl transition-all duration-300 flex flex-col items-center justify-center gap-2 disabled:opacity-70`}
-              >
-                <span className={`text-3xl sm:text-4xl ${style.icon} group-hover:scale-110 transition-transform`}>
-                  {signal.emoji}
-                </span>
-                <span className="text-lg sm:text-xl font-black text-foreground uppercase tracking-widest">
-                  {t(SIGNAL_KEYS[signal.id])}
-                </span>
-                {isSelected && (
-                  <span className="text-[10px] text-muted font-mono">SIGNAL_TRANSMITTED</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+            {lastSent && selected === null && (
+              <div className="bg-surface-dim p-4 rounded-2xl border border-border">
+                <p className="text-[10px] text-muted font-mono uppercase tracking-widest">
+                  {t(SIGNAL_KEYS[lastSent!])}
+                </p>
+              </div>
+            )}
 
-        {lastSent && selected === null && (
-          <div className="bg-surface-dim p-4 rounded-2xl border border-border">
-            <p className="text-[10px] text-muted font-mono uppercase tracking-widest">
-              {t(SIGNAL_KEYS[lastSent!])}
-            </p>
+            {/* PC: Materials below buttons */}
+            <div className="hidden lg:block">
+              <MaterialViewer sessionId={sessionId} />
+            </div>
           </div>
-        )}
 
-        <MaterialViewer sessionId={sessionId} />
-        <ActivePoll sessionId={sessionId} />
-        <QuestionInput sessionId={sessionId} />
+          {/* Right: Quiz + Question + Materials(mobile) */}
+          <div className="lg:col-span-5 space-y-4">
+            <ActivePoll sessionId={sessionId} />
+            <QuestionInput sessionId={sessionId} />
+            {/* Mobile only: Materials */}
+            <div className="lg:hidden">
+              <MaterialViewer sessionId={sessionId} />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
