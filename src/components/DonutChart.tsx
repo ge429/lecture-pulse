@@ -1,6 +1,6 @@
 "use client";
 
-import { SIGNALS } from "@/lib/constants";
+import { SIGNALS, SIGNAL_KEYS } from "@/lib/constants";
 import { useLocale } from "./LocaleProvider";
 
 interface Stats {
@@ -41,16 +41,10 @@ export default function DonutChart({ stats }: { stats: Stats }) {
   const total = stats.understood + stats.confused + stats.lost;
   const cx = 80, cy = 80, outerR = 68, innerR = 44;
 
-  const signalKeys: Record<string, string> = {
-    understood: "student.understood",
-    confused: "student.confused",
-    lost: "student.lost",
-  };
-
   const segments = SIGNALS.map((s) => ({
     value: stats[s.id],
     color: s.hex,
-    label: t(signalKeys[s.id]),
+    label: t(SIGNAL_KEYS[s.id]),
   }));
 
   let cursor = 0;

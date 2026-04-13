@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import type { ResponseType } from "@/lib/database.types";
 import { POLL_INTERVAL, TOAST_DURATION, TOAST_FADE_OUT } from "@/lib/constants";
+import { computeLatestStats } from "@/lib/stats";
 import DonutChart from "@/components/DonutChart";
 import StatBar from "@/components/StatBar";
 import QuestionsPanel from "@/components/QuestionsPanel";
@@ -48,31 +48,15 @@ export default function DashboardPage({
 
   // ── 데이터 fetching ──────────────────────────────────────────────────────
 
-  const fetchStats = useCallback(async (sessionId: string, active: boolean) => {
-    let query = supabase
+  const fetchStats = useCallback(async (sessionId: string) => {
+    const { data } = await supabase
       .from("responses")
       .select("student_id, type, created_at")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: false });
 
-    // 종료된 수업이 아니면 전체 데이터 표시 (중간에 재접속해도 이전 데이터 보임)
-    // active인 경우에도 전체 데이터를 보여줌
-
-    const { data } = await query;
     if (!data) return;
-
-    const latestByStudent = new Map<string, ResponseType>();
-    for (const row of data) {
-      if (!latestByStudent.has(row.student_id)) {
-        latestByStudent.set(row.student_id, row.type);
-      }
-    }
-
-    const counts: Stats = { understood: 0, confused: 0, lost: 0 };
-    for (const type of latestByStudent.values()) {
-      counts[type]++;
-    }
-    setStats(counts);
+    setStats(computeLatestStats(data));
   }, []);
 
   const fetchMaterials = useCallback(async (sessionId: string) => {
@@ -246,7 +230,7 @@ export default function DashboardPage({
       setSessionId(data.id);
       setSessionName(data.name);
       setIsActive(data.is_active);
-      fetchStats(data.id, data.is_active);
+      fetchStats(data.id);
       fetchQuestions(data.id);
       fetchMaterials(data.id);
       fetchPendingPolls(data.id);
@@ -274,7 +258,7 @@ export default function DashboardPage({
 
     const responsesChannel = supabase
       .channel(`responses-${sessionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "responses", filter: `session_id=eq.${sessionId}` }, () => fetchStats(sessionId, isActive))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "responses", filter: `session_id=eq.${sessionId}` }, () => fetchStats(sessionId))
       .subscribe();
 
     const questionsChannel = supabase
@@ -286,7 +270,7 @@ export default function DashboardPage({
       .subscribe();
 
     const interval = setInterval(() => {
-      fetchStats(sessionId, isActive);
+      fetchStats(sessionId);
       fetchQuestions(sessionId);
     }, POLL_INTERVAL);
 
@@ -295,7 +279,7 @@ export default function DashboardPage({
       supabase.removeChannel(questionsChannel);
       clearInterval(interval);
     };
-  }, [sessionId, isActive, fetchStats, fetchQuestions]);
+  }, [sessionId, fetchStats, fetchQuestions]);
 
   useEffect(() => {
     if (!activePoll?.id || !activePoll.is_open) return;

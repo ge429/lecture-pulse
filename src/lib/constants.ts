@@ -50,3 +50,10 @@ export const CLUSTER_SIMILARITY_THRESHOLD = 0.2;
 
 // 수업 코드 길이
 export const SESSION_CODE_LENGTH = 6;
+
+// 시그널 ID → i18n 키 매핑
+export const SIGNAL_KEYS: Record<string, string> = {
+  understood: "student.understood",
+  confused: "student.confused",
+  lost: "student.lost",
+};

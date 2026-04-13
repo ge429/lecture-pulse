@@ -5,18 +5,12 @@ import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getStudentId } from "@/lib/student";
-import { SIGNALS, SIGNAL_RESET_DELAY } from "@/lib/constants";
+import { SIGNALS, SIGNAL_RESET_DELAY, SIGNAL_KEYS } from "@/lib/constants";
 import type { ResponseType } from "@/lib/database.types";
 import ActivePoll from "@/components/ActivePoll";
 import QuestionInput from "@/components/QuestionInput";
 import MaterialViewer from "@/components/MaterialViewer";
 import { useLocale } from "@/components/LocaleProvider";
-
-const SIGNAL_KEYS: Record<string, string> = {
-  understood: "student.understood",
-  confused: "student.confused",
-  lost: "student.lost",
-};
 
 const SIGNAL_STYLES: Record<string, { border: string; hover: string; icon: string }> = {
   understood: { border: "border-success/50", hover: "hover:bg-success/10", icon: "text-success" },

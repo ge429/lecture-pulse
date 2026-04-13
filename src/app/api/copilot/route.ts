@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { callClaude } from "@/lib/anthropic";
+import { computeLatestStats } from "@/lib/stats";
 
 const FALLBACK = {
   suggestion: "학생들의 혼란도가 높습니다. 현재 내용을 다시 설명해보세요.",
@@ -22,16 +23,7 @@ export async function POST(req: NextRequest) {
     .eq("session_id", sessionId)
     .order("created_at", { ascending: false });
 
-  const latestByStudent = new Map<string, string>();
-  for (const r of responses ?? []) {
-    if (!latestByStudent.has(r.student_id)) {
-      latestByStudent.set(r.student_id, r.type);
-    }
-  }
-  const stats = { understood: 0, confused: 0, lost: 0 };
-  for (const type of latestByStudent.values()) {
-    stats[type as keyof typeof stats]++;
-  }
+  const stats = computeLatestStats(responses ?? []);
   const total = stats.understood + stats.confused + stats.lost;
 
   // 2. 최근 10분 질문
