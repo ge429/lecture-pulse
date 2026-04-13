@@ -210,7 +210,7 @@ export default function DashboardPage({
       setCoach(null);
     }
     setCoachLoading(false);
-  }, [sessionId, coachLoading]);
+  }, [sessionId, coachLoading, currentSlide]);
 
   const showToast = (message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
