@@ -128,19 +128,19 @@ export default function ReportPage({
     );
   }
 
-  const { stats, questions } = report;
-  const total =
-    stats.typeCounts.understood +
-    stats.typeCounts.confused +
-    stats.typeCounts.lost;
+  // 방어적 데이터 접근 (API 응답이 불완전할 수 있음)
+  const stats = report.stats ?? { uniqueStudents: 0, totalResponses: 0, typeCounts: { understood: 0, confused: 0, lost: 0 }, timeline: [] };
+  const questions = report.questions ?? { total: 0, clusters: [], unclustered: [] };
+  const typeCounts = stats.typeCounts ?? { understood: 0, confused: 0, lost: 0 };
+  const timeline = stats.timeline ?? [];
+
+  const total = typeCounts.understood + typeCounts.confused + typeCounts.lost;
   const confusionRate =
     total > 0
-      ? Math.round(
-          ((stats.typeCounts.confused + stats.typeCounts.lost) / total) * 100
-        )
+      ? Math.round(((typeCounts.confused + typeCounts.lost) / total) * 100)
       : 0;
 
-  const dateStr = formatDate(report.session.createdAt).split(" ")[0];
+  const dateStr = formatDate(report.session?.createdAt ?? "").split(" ")[0];
 
   return (
     <div className="flex flex-1 flex-col p-4 md:p-8">
@@ -209,9 +209,9 @@ export default function ReportPage({
           </h2>
           <div className="flex flex-col gap-3">
             {[
-              { label: t("student.understood"), emoji: "✅", count: stats.typeCounts.understood, color: "bg-success" },
-              { label: t("student.confused"), emoji: "🤔", count: stats.typeCounts.confused, color: "bg-warning" },
-              { label: t("student.lost"), emoji: "❌", count: stats.typeCounts.lost, color: "bg-danger" },
+              { label: t("student.understood"), emoji: "✅", count: typeCounts.understood, color: "bg-success" },
+              { label: t("student.confused"), emoji: "🤔", count: typeCounts.confused, color: "bg-warning" },
+              { label: t("student.lost"), emoji: "❌", count: typeCounts.lost, color: "bg-danger" },
             ].map((item) => {
               const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
               return (
@@ -230,53 +230,61 @@ export default function ReportPage({
         </div>
 
         {/* Timeline */}
-        {stats.timeline.length > 0 && (
-          <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-1 text-[10px] font-bold text-muted uppercase tracking-widest">{t("report.timeline")}</h2>
-            <p className="mb-4 text-[10px] text-muted">{t("report.bucket")}</p>
-            <div className="mb-2 flex gap-3 text-[10px] text-muted">
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-success" />{t("student.understood")}</span>
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning" />{t("student.confused")}</span>
-              <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-danger" />{t("student.lost")}</span>
-            </div>
-            <TimelineChart timeline={stats.timeline} />
-          </div>
-        )}
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-1 text-[10px] font-bold text-muted uppercase tracking-widest">{t("report.timeline")}</h2>
+          <p className="mb-4 text-[10px] text-muted">{t("report.bucket")}</p>
+          {timeline.length > 0 ? (
+            <>
+              <div className="mb-2 flex gap-3 text-[10px] text-muted">
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-success" />{t("student.understood")}</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning" />{t("student.confused")}</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-danger" />{t("student.lost")}</span>
+              </div>
+              <TimelineChart timeline={timeline} />
+            </>
+          ) : (
+            <p className="py-6 text-center text-xs text-muted">데이터가 충분하지 않습니다</p>
+          )}
+        </div>
 
         {/* Questions */}
-        {questions.total > 0 && (
-          <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 text-[10px] font-bold text-muted uppercase tracking-widest">
-              {t("report.questions")} ({questions.total})
-            </h2>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-[10px] font-bold text-muted uppercase tracking-widest">
+            {t("report.questions")} ({questions.total})
+          </h2>
 
-            {questions.clusters.map((cluster, i) => (
-              <div key={cluster.clusterId} className="mb-4 rounded-xl bg-surface-dim p-4 border-l-2 border-primary">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                    Group {i + 1}
-                  </span>
-                  <span className="text-[10px] text-muted">{cluster.count}{t("chart.people")}</span>
-                </div>
-                <ul className="flex flex-col gap-1">
-                  {cluster.questions.map((q, qi) => (
-                    <li key={qi} className="text-sm text-foreground">&ldquo;{q}&rdquo;</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            {questions.unclustered.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {questions.unclustered.map((q, i) => (
-                  <div key={i} className="rounded-xl bg-surface-dim px-4 py-2.5 text-sm text-foreground">
-                    &ldquo;{q}&rdquo;
+          {questions.total === 0 ? (
+            <p className="py-4 text-center text-xs text-muted">질문이 없습니다</p>
+          ) : (
+            <>
+              {questions.clusters.map((cluster, i) => (
+                <div key={cluster.clusterId} className="mb-4 rounded-xl bg-surface-dim p-4 border-l-2 border-primary">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      Group {i + 1}
+                    </span>
+                    <span className="text-[10px] text-muted">{cluster.count}{t("chart.people")}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  <ul className="flex flex-col gap-1">
+                    {cluster.questions.map((q, qi) => (
+                      <li key={qi} className="text-sm text-foreground">&ldquo;{q}&rdquo;</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+
+              {questions.unclustered.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {questions.unclustered.map((q, i) => (
+                    <div key={i} className="rounded-xl bg-surface-dim px-4 py-2.5 text-sm text-foreground">
+                      &ldquo;{q}&rdquo;
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
