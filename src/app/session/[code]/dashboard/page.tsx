@@ -39,9 +39,9 @@ export default function DashboardPage({
   const [pollResults, setPollResults] = useState<{ answer: string; count: number }[]>([]);
   const [materials, setMaterials] = useState<{ id: string; file_name: string; file_url: string; summary: string | null }[]>([]);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
-  const [copilot, setCopilot] = useState<{ suggestion: string; severity: "warning" | "critical"; suggestQuiz: boolean; quizTopic: string | null } | null>(null);
-  const [copilotLoading, setCopilotLoading] = useState(false);
-  const copilotCooldown = useRef<number>(0);
+  const [coach, setCoach] = useState<{ suggestion: string; severity: "warning" | "critical"; suggestQuiz: boolean; quizTopic: string | null } | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const coachCooldown = useRef<number>(0);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [totalSlidePages, setTotalSlidePages] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -192,25 +192,25 @@ export default function DashboardPage({
     setGeneratingQuiz(false);
   };
 
-  const triggerCopilot = useCallback(async () => {
-    if (!sessionId || copilotLoading) return;
+  const triggerCoach = useCallback(async () => {
+    if (!sessionId || coachLoading) return;
     const now = Date.now();
-    if (now - copilotCooldown.current < 180_000) return; // 3분 쿨다운
-    copilotCooldown.current = now;
-    setCopilotLoading(true);
+    if (now - coachCooldown.current < 180_000) return; // 3분 쿨다운
+    coachCooldown.current = now;
+    setCoachLoading(true);
     try {
-      const res = await fetch("/api/copilot", {
+      const res = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, currentSlide }),
       });
       const data = await res.json();
-      setCopilot(data);
+      setCoach(data);
     } catch {
-      setCopilot(null);
+      setCoach(null);
     }
-    setCopilotLoading(false);
-  }, [sessionId, copilotLoading]);
+    setCoachLoading(false);
+  }, [sessionId, coachLoading]);
 
   const showToast = (message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -313,9 +313,9 @@ export default function DashboardPage({
   // AI 코파일럿 자동 트리거: 혼란도 40% 이상
   useEffect(() => {
     if (isActive && total > 0 && confusionRate >= 0.4) {
-      triggerCopilot();
+      triggerCoach();
     }
-  }, [stats, isActive, total, confusionRate, triggerCopilot]);
+  }, [stats, isActive, total, confusionRate, triggerCoach]);
 
   if (error) {
     return (
@@ -451,35 +451,35 @@ export default function DashboardPage({
 
           {/* Right Column - Sidebar */}
           <div className="lg:col-span-4 space-y-4 md:space-y-6">
-            {/* AI Copilot */}
+            {/* AI Coach */}
             <div className={`rounded-2xl p-5 md:p-6 border relative overflow-hidden ${
-              copilot?.severity === "critical"
+              coach?.severity === "critical"
                 ? "border-danger/30 bg-gradient-to-br from-danger/10 to-card"
                 : "border-primary/20 bg-gradient-to-br from-primary/10 to-card"
             }`}>
               <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-primary">🤖</span>
-                <h4 className="font-black text-foreground uppercase tracking-tight text-sm">{t("dash.copilot")}</h4>
-                {copilotLoading && <span className="text-[10px] text-muted animate-pulse">분석 중...</span>}
+                <h4 className="font-black text-foreground uppercase tracking-tight text-sm">{t("dash.coach")}</h4>
+                {coachLoading && <span className="text-[10px] text-muted animate-pulse">분석 중...</span>}
               </div>
-              {copilot ? (
+              {coach ? (
                 <div className="space-y-3">
                   <div className="bg-surface-dim/50 p-3 md:p-4 rounded-xl text-sm border-l-2 border-primary">
-                    <p className="text-foreground leading-relaxed">{copilot.suggestion}</p>
+                    <p className="text-foreground leading-relaxed">{coach.suggestion}</p>
                   </div>
-                  {copilot.suggestQuiz && copilot.quizTopic && (
+                  {coach.suggestQuiz && coach.quizTopic && (
                     <button
-                      onClick={() => handleGenerateQuiz(copilot.quizTopic!)}
+                      onClick={() => handleGenerateQuiz(coach.quizTopic!)}
                       disabled={generatingQuiz}
                       className="w-full bg-primary/10 hover:bg-primary/20 text-primary text-xs py-2 rounded-lg font-bold uppercase tracking-widest transition-all disabled:opacity-50"
                     >
-                      {generatingQuiz ? "생성 중..." : `🎯 ${copilot.quizTopic} 퀴즈`}
+                      {generatingQuiz ? "생성 중..." : `🎯 ${coach.quizTopic} 퀴즈`}
                     </button>
                   )}
                 </div>
               ) : (
-                <p className="text-muted text-xs">{t("dash.copilotHint")}</p>
+                <p className="text-muted text-xs">{t("dash.coachHint")}</p>
               )}
             </div>
 
