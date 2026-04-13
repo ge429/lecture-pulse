@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -14,7 +14,7 @@ interface SlideViewerProps {
   totalPages: number | null;
   onPageChange?: (page: number) => void;
   onTotalPages?: (total: number) => void;
-  isController: boolean; // true=교수(넘기기 가능), false=학생(읽기 전용)
+  isController: boolean;
 }
 
 export default function SlideViewer({
@@ -27,8 +27,22 @@ export default function SlideViewer({
 }: SlideViewerProps) {
   const { t } = useLocale();
   const [loading, setLoading] = useState(true);
-  const page = currentPage + 1; // 0-based → 1-based
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(600);
+  const page = currentPage + 1;
   const total = totalPages ?? 0;
+
+  // 컨테이너 크기에 맞춰 PDF 너비 조절
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth - 16);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 md:p-6">
@@ -43,8 +57,7 @@ export default function SlideViewer({
         )}
       </div>
 
-      {/* PDF Render */}
-      <div className="flex justify-center bg-surface-dim rounded-xl overflow-hidden min-h-[200px] md:min-h-[350px]">
+      <div ref={containerRef} className="flex justify-center bg-surface-dim rounded-xl overflow-hidden">
         <Document
           file={fileUrl}
           onLoadSuccess={({ numPages }) => {
@@ -52,26 +65,25 @@ export default function SlideViewer({
             onTotalPages?.(numPages);
           }}
           loading={
-            <div className="flex items-center justify-center h-[200px] md:h-[350px]">
+            <div className="flex items-center justify-center h-[200px] md:h-[350px] w-full">
               <span className="text-xs text-muted font-mono uppercase tracking-widest">Loading PDF...</span>
             </div>
           }
           error={
-            <div className="flex items-center justify-center h-[200px] md:h-[350px]">
+            <div className="flex items-center justify-center h-[200px] md:h-[350px] w-full">
               <span className="text-xs text-danger font-mono">PDF를 불러올 수 없습니다</span>
             </div>
           }
         >
           <Page
             pageNumber={page}
-            width={typeof window !== "undefined" ? Math.min(window.innerWidth - 80, 700) : 600}
+            width={containerWidth}
             renderTextLayer={false}
             renderAnnotationLayer={false}
           />
         </Document>
       </div>
 
-      {/* Controls (교수만) */}
       {isController && !loading && total > 0 && (
         <div className="flex items-center justify-center gap-4 mt-4">
           <button
