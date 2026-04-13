@@ -19,12 +19,29 @@ export async function POST(req: NextRequest) {
   // 1. 이해도 통계
   const { data: responses } = await supabase
     .from("responses")
-    .select("student_id, type")
+    .select("student_id, type, slide_number")
     .eq("session_id", sessionId)
     .order("created_at", { ascending: false });
 
   const stats = computeLatestStats(responses ?? []);
   const total = stats.understood + stats.confused + stats.lost;
+
+  // 슬라이드별 혼란 집계 (최근 응답 기준)
+  const slideConfusion = new Map<number, { confused: number; lost: number; total: number }>();
+  for (const r of responses ?? []) {
+    if (r.slide_number !== null && r.slide_number !== undefined) {
+      const s = slideConfusion.get(r.slide_number) ?? { confused: 0, lost: 0, total: 0 };
+      s.total++;
+      if (r.type === "confused") s.confused++;
+      if (r.type === "lost") s.lost++;
+      slideConfusion.set(r.slide_number, s);
+    }
+  }
+  const confusedSlides = [...slideConfusion.entries()]
+    .filter(([, v]) => v.total > 0 && (v.confused + v.lost) / v.total >= 0.4)
+    .sort((a, b) => (b[1].confused + b[1].lost) - (a[1].confused + a[1].lost))
+    .map(([slide, v]) => `${slide + 1}페이지(혼란 ${Math.round(((v.confused + v.lost) / v.total) * 100)}%)`)
+    .slice(0, 5);
 
   // 2. 최근 10분 질문
   const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -45,11 +62,16 @@ export async function POST(req: NextRequest) {
   const questionList = (questions ?? []).map((q) => q.text).join("\n- ");
   const materialNames = (materials ?? []).map((m) => m.file_name).join(", ");
 
-  const slideInfo = currentSlide !== undefined ? `\n현재 슬라이드: ${currentSlide + 1}페이지` : "";
+  const slideInfo = currentSlide !== undefined && currentSlide !== null
+    ? `\n현재 교수 슬라이드: ${currentSlide + 1}페이지`
+    : "";
+  const confusedSlidesInfo = confusedSlides.length > 0
+    ? `\n혼란이 높은 슬라이드: ${confusedSlides.join(", ")}`
+    : "";
 
   const prompt = `현재 수업 실시간 데이터:
 
-참여 학생: ${total}명${slideInfo}
+참여 학생: ${total}명${slideInfo}${confusedSlidesInfo}
 이해됨: ${stats.understood}명 / 헷갈림: ${stats.confused}명 / 모르겠음: ${stats.lost}명
 혼란도: ${total > 0 ? Math.round(((stats.confused + stats.lost) / total) * 100) : 0}%
 
@@ -59,6 +81,7 @@ ${questionList || "(질문 없음)"}
 강의자료: ${materialNames || "(없음)"}
 
 위 데이터를 분석해서 교수에게 지금 즉시 취할 수 있는 구체적 행동을 제안하세요.
+슬라이드 번호를 언급할 때는 반드시 위에 제공된 "혼란이 높은 슬라이드" 데이터의 페이지 번호를 사용하세요.
 어떤 개념이 문제인지, 교수가 지금 뭘 하면 되는지, 퀴즈가 필요한지 분석하세요.
 
 반드시 아래 JSON 형식으로만 응답하세요:
