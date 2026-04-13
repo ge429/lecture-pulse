@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getStudentId } from "@/lib/student";
+import { getStudentId, markSessionJoined } from "@/lib/student";
 import { SIGNALS, SIGNAL_RESET_DELAY, SIGNAL_KEYS } from "@/lib/constants";
 import type { ResponseType } from "@/lib/database.types";
 import ActivePoll from "@/components/ActivePoll";
@@ -46,6 +46,7 @@ export default function StudentPage({
       if (data) {
         setSessionId(data.id);
         setCurrentSlide(data.current_slide ?? 0);
+        markSessionJoined(data.id);
         if (!data.is_active) setEnded(true);
 
         // 강의자료 URL 가져오기

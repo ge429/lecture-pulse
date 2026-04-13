@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getStudentId } from "@/lib/student";
+import { getStudentId, getJoinedSessionIds } from "@/lib/student";
 import { formatDate } from "@/lib/format";
 import { useLocale } from "@/components/LocaleProvider";
 
@@ -51,7 +51,10 @@ function SessionsContent() {
           .limit(50);
         if (data) setSessions(data);
       } else {
+        // DB 기록 (responses/questions) + localStorage 참여 기록 합산
         const studentId = getStudentId();
+        const joinedFromLocal = getJoinedSessionIds();
+
         const [{ data: r }, { data: q }] = await Promise.all([
           supabase.from("responses").select("session_id").eq("student_id", studentId),
           supabase.from("questions").select("session_id").eq("student_id", studentId),
@@ -61,6 +64,7 @@ function SessionsContent() {
           ...new Set([
             ...(r ?? []).map((row) => row.session_id),
             ...(q ?? []).map((row) => row.session_id),
+            ...joinedFromLocal,
           ]),
         ];
 
