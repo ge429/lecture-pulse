@@ -60,11 +60,11 @@ function TimelineChart({
               className="w-full flex flex-col justify-end rounded-t-md overflow-hidden"
               style={{ height: 100 }}
             >
-              <div className="bg-emerald-500" style={{ height: `${uH}%` }} />
-              <div className="bg-amber-500" style={{ height: `${cH}%` }} />
-              <div className="bg-rose-500" style={{ height: `${lH}%` }} />
+              <div className="bg-success" style={{ height: `${uH}%` }} />
+              <div className="bg-warning" style={{ height: `${cH}%` }} />
+              <div className="bg-danger" style={{ height: `${lH}%` }} />
             </div>
-            <span className="text-[10px] text-gray-400">{t.time}</span>
+            <span className="text-[10px] text-muted">{t.time}</span>
           </div>
         );
       })}
@@ -162,8 +162,8 @@ export default function ReportPage({
 
         {/* Materials */}
         {report.materials && report.materials.length > 0 && (
-          <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
-            <h2 className="mb-3 text-sm font-bold text-white uppercase tracking-widest">{t("report.materials")}</h2>
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-3 text-sm font-bold text-foreground uppercase tracking-widest">{t("report.materials")}</h2>
             <div className="flex flex-col gap-1">
               {report.materials.map((m, i) => (
                 <p key={i} className="text-sm text-foreground">📄 {m.fileName}</p>
@@ -174,8 +174,8 @@ export default function ReportPage({
 
         {/* AI Summary */}
         {report.aiSummary && (
-          <div className="rounded-2xl border border-primary/20 p-6 relative overflow-hidden" style={{ background: "#1e1e32" }}>
-            <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl" style={{ background: "rgba(99,102,241,0.15)" }} />
+          <div className="rounded-2xl border border-primary/30 bg-card p-6 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
             <h2 className="mb-3 text-sm font-bold text-primary">{t("report.aiAnalysis")}</h2>
             <div className="max-w-none text-sm leading-relaxed text-foreground whitespace-pre-wrap">
               {report.aiSummary}
@@ -185,41 +185,41 @@ export default function ReportPage({
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "#1e1e32" }}>
-            <div className="text-3xl font-black text-emerald-400">{stats.uniqueStudents}</div>
-            <div className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-1">{t("report.students")}</div>
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div className="text-3xl font-black text-success">{stats.uniqueStudents}</div>
+            <div className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">{t("report.students")}</div>
           </div>
-          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "#1e1e32" }}>
-            <div className="text-3xl font-black text-blue-400">{stats.totalResponses}</div>
-            <div className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-1">{t("report.responses")}</div>
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div className="text-3xl font-black text-primary">{stats.totalResponses}</div>
+            <div className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">{t("report.responses")}</div>
           </div>
-          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "#1e1e32" }}>
-            <div className={`text-3xl font-black ${confusionRate > 50 ? "text-rose-400" : confusionRate > 30 ? "text-amber-400" : "text-emerald-400"}`}>
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <div className={`text-3xl font-black ${confusionRate > 50 ? "text-danger" : confusionRate > 30 ? "text-warning" : "text-success"}`}>
               {confusionRate}%
             </div>
-            <div className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-1">{t("report.confusion")}</div>
+            <div className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">{t("report.confusion")}</div>
           </div>
         </div>
 
         {/* Understanding Distribution */}
-        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
-          <h2 className="mb-4 text-sm font-bold text-white uppercase tracking-widest">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-sm font-bold text-foreground uppercase tracking-widest">
             {t("report.distribution")}
           </h2>
           <div className="flex flex-col gap-3">
             {[
-              { label: t("student.understood"), emoji: "✅", count: typeCounts.understood, color: "bg-emerald-500", textColor: "text-emerald-400" },
-              { label: t("student.confused"), emoji: "🤔", count: typeCounts.confused, color: "bg-amber-500", textColor: "text-amber-400" },
-              { label: t("student.lost"), emoji: "❌", count: typeCounts.lost, color: "bg-rose-500", textColor: "text-rose-400" },
+              { label: t("student.understood"), emoji: "✅", count: typeCounts.understood, color: "bg-success" },
+              { label: t("student.confused"), emoji: "🤔", count: typeCounts.confused, color: "bg-warning" },
+              { label: t("student.lost"), emoji: "❌", count: typeCounts.lost, color: "bg-danger" },
             ].map((item) => {
               const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
               return (
                 <div key={item.label} className="flex items-center gap-3">
-                  <span className="w-20 text-sm text-gray-100">{item.emoji} {item.label}</span>
-                  <div className="flex-1 h-6 rounded-full overflow-hidden" style={{ background: "#2a2a45" }}>
+                  <span className="w-20 text-sm text-foreground">{item.emoji} {item.label}</span>
+                  <div className="flex-1 h-6 rounded-full overflow-hidden bg-surface-container">
                     <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
                   </div>
-                  <span className={`w-24 text-right text-sm font-bold tabular-nums ${item.textColor}`}>
+                  <span className="w-24 text-right text-sm font-bold tabular-nums text-foreground">
                     {item.count}{t("chart.people")} ({pct}%)
                   </span>
                 </div>
@@ -229,44 +229,44 @@ export default function ReportPage({
         </div>
 
         {/* Timeline */}
-        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
-          <h2 className="mb-1 text-sm font-bold text-white uppercase tracking-widest">{t("report.timeline")}</h2>
-          <p className="mb-4 text-[10px] text-gray-400">{t("report.bucket")}</p>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-1 text-sm font-bold text-foreground uppercase tracking-widest">{t("report.timeline")}</h2>
+          <p className="mb-4 text-[10px] text-muted">{t("report.bucket")}</p>
           {timeline.length > 0 ? (
             <>
-              <div className="mb-2 flex gap-4 text-[10px] text-gray-300">
-                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />{t("student.understood")}</span>
-                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />{t("student.confused")}</span>
-                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-rose-500" />{t("student.lost")}</span>
+              <div className="mb-2 flex gap-4 text-[10px] text-muted">
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-success" />{t("student.understood")}</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-warning" />{t("student.confused")}</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-danger" />{t("student.lost")}</span>
               </div>
               <TimelineChart timeline={timeline} />
             </>
           ) : (
-            <p className="py-6 text-center text-sm text-gray-400">데이터가 충분하지 않습니다</p>
+            <p className="py-6 text-center text-sm text-muted">데이터가 충분하지 않습니다</p>
           )}
         </div>
 
         {/* Questions */}
-        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
-          <h2 className="mb-4 text-sm font-bold text-white uppercase tracking-widest">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-sm font-bold text-foreground uppercase tracking-widest">
             {t("report.questions")} ({questions.total})
           </h2>
 
           {questions.total === 0 ? (
-            <p className="py-4 text-center text-sm text-gray-400">질문이 없습니다</p>
+            <p className="py-4 text-center text-sm text-muted">질문이 없습니다</p>
           ) : (
             <>
               {questions.clusters.map((cluster, i) => (
-                <div key={cluster.clusterId} className="mb-4 rounded-xl p-4 border-l-2 border-primary" style={{ background: "#252540" }}>
+                <div key={cluster.clusterId} className="mb-4 rounded-xl p-4 border-l-2 border-primary bg-surface-container">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
                       Group {i + 1}
                     </span>
-                    <span className="text-[10px] text-gray-400">{cluster.count}{t("chart.people")}</span>
+                    <span className="text-[10px] text-muted">{cluster.count}{t("chart.people")}</span>
                   </div>
                   <ul className="flex flex-col gap-1">
                     {cluster.questions.map((q, qi) => (
-                      <li key={qi} className="text-sm text-gray-100">&ldquo;{q}&rdquo;</li>
+                      <li key={qi} className="text-sm text-foreground">&ldquo;{q}&rdquo;</li>
                     ))}
                   </ul>
                 </div>
@@ -275,7 +275,7 @@ export default function ReportPage({
               {questions.unclustered.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {questions.unclustered.map((q, i) => (
-                    <div key={i} className="rounded-xl px-4 py-2.5 text-sm text-gray-100" style={{ background: "#252540" }}>
+                    <div key={i} className="rounded-xl px-4 py-2.5 text-sm text-foreground bg-surface-container">
                       &ldquo;{q}&rdquo;
                     </div>
                   ))}

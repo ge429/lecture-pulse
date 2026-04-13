@@ -2,15 +2,16 @@
 
 :root {
   --background: #f6f5f8;
-  --foreground: #302f3b;
+  --foreground: #1a1a2e;
   --primary: #5d3fe0;
   --primary-hover: #441cc8;
   --success: #00bd85;
-  --warning: #f59e0b;
-  --danger: #ff516a;
+  --warning: #e8a308;
+  --danger: #e5384f;
   --card: #ffffff;
-  --muted: #928ea1;
-  --border: #e4e1f0;
+  --card-hover: #f0eef6;
+  --muted: #6b6880;
+  --border: #d8d5e6;
   --surface-dim: #eae8f0;
   --surface-container: #f0eef6;
 }
@@ -23,11 +24,12 @@
   --success: #45dfa4;
   --warning: #f59e0b;
   --danger: #ff516a;
-  --card: #1b1b25;
-  --muted: #928ea1;
-  --border: #34343f;
-  --surface-dim: #12121d;
-  --surface-container: #1f1f29;
+  --card: #1e1e32;
+  --card-hover: #282845;
+  --muted: #9e9ab0;
+  --border: #3a3a50;
+  --surface-dim: #151520;
+  --surface-container: #252540;
 }
 
 @theme inline {
@@ -39,6 +41,7 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-surface-dim: var(--surface-dim);
