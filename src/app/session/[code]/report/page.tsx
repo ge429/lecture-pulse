@@ -5,7 +5,6 @@ import { use } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatDate } from "@/lib/format";
-import ReactMarkdown from "react-markdown";
 import { useLocale } from "@/components/LocaleProvider";
 
 interface ReportData {
@@ -178,8 +177,8 @@ export default function ReportPage({
           <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-6 relative overflow-hidden">
             <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
             <h2 className="mb-3 text-sm font-bold text-primary">{t("report.aiAnalysis")}</h2>
-            <div className="prose prose-sm prose-invert max-w-none text-foreground">
-              <ReactMarkdown>{report.aiSummary}</ReactMarkdown>
+            <div className="max-w-none text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+              {report.aiSummary}
             </div>
           </div>
         )}
