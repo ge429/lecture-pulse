@@ -10,6 +10,7 @@ import type { ResponseType } from "@/lib/database.types";
 import ActivePoll from "@/components/ActivePoll";
 import QuestionInput from "@/components/QuestionInput";
 import MaterialViewer from "@/components/MaterialViewer";
+import SlideViewer from "@/components/SlideViewer";
 import { useLocale } from "@/components/LocaleProvider";
 
 const SIGNAL_STYLES: Record<string, { border: string; hover: string; icon: string }> = {
@@ -29,19 +30,32 @@ export default function StudentPage({
   const [selected, setSelected] = useState<string | null>(null);
   const [lastSent, setLastSent] = useState<string | null>(null);
   const [ended, setEnded] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [totalSlidePages, setTotalSlidePages] = useState<number | null>(null);
+  const [slideFileUrl, setSlideFileUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase
         .from("sessions")
-        .select("id, is_active")
+        .select("id, is_active, current_slide")
         .eq("code", code)
         .single();
 
       if (data) {
         setSessionId(data.id);
+        setCurrentSlide(data.current_slide ?? 0);
         if (!data.is_active) setEnded(true);
+
+        // 강의자료 URL 가져오기
+        const { data: mats } = await supabase
+          .from("materials")
+          .select("file_url")
+          .eq("session_id", data.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (mats && mats.length > 0) setSlideFileUrl(mats[0].file_url);
       } else {
         setError("존재하지 않는 수업입니다.");
       }
@@ -58,8 +72,9 @@ export default function StudentPage({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` },
         (payload) => {
-          if (payload.new && payload.new.is_active === false) {
-            setEnded(true);
+          if (payload.new) {
+            if (payload.new.is_active === false) setEnded(true);
+            if (payload.new.current_slide !== undefined) setCurrentSlide(payload.new.current_slide);
           }
         }
       )
@@ -78,6 +93,7 @@ export default function StudentPage({
       session_id: sessionId,
       student_id: getStudentId(),
       type: signalId,
+      slide_number: slideFileUrl ? currentSlide : null,
     });
 
     if (dbError) {
@@ -185,19 +201,38 @@ export default function StudentPage({
               </div>
             )}
 
-            {/* PC: Materials below buttons */}
+            {/* PC: Slide viewer below buttons */}
             <div className="hidden lg:block">
-              <MaterialViewer sessionId={sessionId} />
+              {slideFileUrl ? (
+                <SlideViewer
+                  fileUrl={slideFileUrl}
+                  currentPage={currentSlide}
+                  totalPages={totalSlidePages}
+                  onTotalPages={setTotalSlidePages}
+                  isController={false}
+                />
+              ) : (
+                <MaterialViewer sessionId={sessionId} />
+              )}
             </div>
           </div>
 
-          {/* Right: Quiz + Question + Materials(mobile) */}
+          {/* Right: Quiz + Question + Slide(mobile) */}
           <div className="lg:col-span-5 space-y-4">
             <ActivePoll sessionId={sessionId} />
             <QuestionInput sessionId={sessionId} />
-            {/* Mobile only: Materials */}
             <div className="lg:hidden">
-              <MaterialViewer sessionId={sessionId} />
+              {slideFileUrl ? (
+                <SlideViewer
+                  fileUrl={slideFileUrl}
+                  currentPage={currentSlide}
+                  totalPages={totalSlidePages}
+                  onTotalPages={setTotalSlidePages}
+                  isController={false}
+                />
+              ) : (
+                <MaterialViewer sessionId={sessionId} />
+              )}
             </div>
           </div>
         </div>

@@ -11,7 +11,7 @@ const FALLBACK = {
 };
 
 export async function POST(req: NextRequest) {
-  const { sessionId } = await req.json();
+  const { sessionId, currentSlide } = await req.json();
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId required" }, { status: 400 });
   }
@@ -45,9 +45,11 @@ export async function POST(req: NextRequest) {
   const questionList = (questions ?? []).map((q) => q.text).join("\n- ");
   const materialNames = (materials ?? []).map((m) => m.file_name).join(", ");
 
+  const slideInfo = currentSlide !== undefined ? `\n현재 슬라이드: ${currentSlide + 1}페이지` : "";
+
   const prompt = `현재 수업 실시간 데이터:
 
-참여 학생: ${total}명
+참여 학생: ${total}명${slideInfo}
 이해됨: ${stats.understood}명 / 헷갈림: ${stats.confused}명 / 모르겠음: ${stats.lost}명
 혼란도: ${total > 0 ? Math.round(((stats.confused + stats.lost) / total) * 100) : 0}%
 

@@ -24,6 +24,7 @@ interface ReportData {
       confused: number;
       lost: number;
     }[];
+    slideStats?: { slide: number; understood: number; confused: number; lost: number }[];
   };
   questions: {
     total: number;
@@ -132,6 +133,7 @@ export default function ReportPage({
   const questions = report.questions ?? { total: 0, clusters: [], unclustered: [] };
   const typeCounts = stats.typeCounts ?? { understood: 0, confused: 0, lost: 0 };
   const timeline = stats.timeline ?? [];
+  const slideStats = stats.slideStats ?? [];
 
   const total = typeCounts.understood + typeCounts.confused + typeCounts.lost;
   const confusionRate =
@@ -245,6 +247,41 @@ export default function ReportPage({
             <p className="py-6 text-center text-sm text-muted">데이터가 충분하지 않습니다</p>
           )}
         </div>
+
+        {/* Slide Stats */}
+        {slideStats.length > 0 && (
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 text-sm font-bold text-foreground uppercase tracking-widest">
+              슬라이드별 이해도
+            </h2>
+            <div className="flex flex-col gap-2">
+              {slideStats.map((s) => {
+                const sTotal = s.understood + s.confused + s.lost;
+                const confPct = sTotal > 0 ? Math.round(((s.confused + s.lost) / sTotal) * 100) : 0;
+                return (
+                  <div
+                    key={s.slide}
+                    className={`flex items-center gap-3 rounded-xl p-3 ${confPct >= 60 ? "bg-danger/10 border border-danger/30" : "bg-surface-container"}`}
+                  >
+                    <span className="w-16 text-sm font-bold text-foreground">{s.slide + 1}p</span>
+                    <div className="flex-1 flex h-5 rounded-full overflow-hidden bg-surface-dim">
+                      {sTotal > 0 && (
+                        <>
+                          <div className="bg-success h-full" style={{ width: `${(s.understood / sTotal) * 100}%` }} />
+                          <div className="bg-warning h-full" style={{ width: `${(s.confused / sTotal) * 100}%` }} />
+                          <div className="bg-danger h-full" style={{ width: `${(s.lost / sTotal) * 100}%` }} />
+                        </>
+                      )}
+                    </div>
+                    <span className={`w-12 text-right text-xs font-bold ${confPct >= 60 ? "text-danger" : "text-muted"}`}>
+                      {confPct}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Questions */}
         <div className="rounded-2xl border border-border bg-card p-6">

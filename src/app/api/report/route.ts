@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
 
   // 데이터 병렬 조회
   const [{ data: responses }, { data: questions }, { data: materials }] = await Promise.all([
-    supabase.from("responses").select("student_id, type, created_at").eq("session_id", sessionId).order("created_at", { ascending: true }),
+    supabase.from("responses").select("student_id, type, created_at, slide_number").eq("session_id", sessionId).order("created_at", { ascending: true }),
     supabase.from("questions").select("text, cluster_id, created_at").eq("session_id", sessionId).order("created_at", { ascending: true }),
     supabase.from("materials").select("file_name, summary").eq("session_id", sessionId),
   ]);
@@ -118,12 +118,28 @@ export async function GET(req: NextRequest) {
   const timeline = calculateTimeline(allResponses);
   const { clusters: questionClusters, unclustered: unclusteredQs } = buildQuestionClusters(allQuestions);
 
+  // 슬라이드별 이해도 통계
+  const slideMap = new Map<number, { understood: number; confused: number; lost: number }>();
+  for (const r of allResponses) {
+    if (r.slide_number !== null && r.slide_number !== undefined) {
+      const s = slideMap.get(r.slide_number) ?? { understood: 0, confused: 0, lost: 0 };
+      s[r.type as keyof typeof s]++;
+      slideMap.set(r.slide_number, s);
+    }
+  }
+  const slideStats = [...slideMap.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([slide, counts]) => ({ slide, ...counts }));
+
   // AI 요약
   const materialSummaries = allMaterials.filter((m) => m.summary).map((m) => m.summary).join("\n");
+  const slideStatsText = slideStats.length > 0
+    ? `\n슬라이드별 이해도: ${slideStats.map((s) => `${s.slide + 1}페이지(이해:${s.understood}, 헷갈림:${s.confused}, 모르겠음:${s.lost})`).join(", ")}`
+    : "";
   const contextForAI = `수업명: ${session.name}
 참여 학생: ${uniqueStudents}명
 총 응답: ${allResponses.length}건 (이해됨: ${typeCounts.understood}, 헷갈림: ${typeCounts.confused}, 모르겠음: ${typeCounts.lost})
-시간대별 추이: ${JSON.stringify(timeline)}
+시간대별 추이: ${JSON.stringify(timeline)}${slideStatsText}
 질문 (${allQuestions.length}건): ${allQuestions.map((q) => q.text).join(" / ")}
 수업 자료 (${allMaterials.length}건): ${materialSummaries.slice(0, 3000)}`;
 
@@ -131,7 +147,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     session: { name: session.name, code: session.code, createdAt: session.created_at, isActive: session.is_active },
-    stats: { uniqueStudents, totalResponses: allResponses.length, typeCounts, timeline },
+    stats: { uniqueStudents, totalResponses: allResponses.length, typeCounts, timeline, slideStats },
     questions: { total: allQuestions.length, clusters: questionClusters, unclustered: unclusteredQs },
     materials: allMaterials.map((m) => ({ fileName: m.file_name, hasSummary: !!m.summary })),
     aiSummary,

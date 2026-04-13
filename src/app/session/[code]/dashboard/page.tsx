@@ -11,6 +11,7 @@ import StatBar from "@/components/StatBar";
 import QuestionsPanel from "@/components/QuestionsPanel";
 import PollPanel from "@/components/PollPanel";
 import MaterialUpload from "@/components/MaterialUpload";
+import SlideViewer from "@/components/SlideViewer";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocale } from "@/components/LocaleProvider";
 
@@ -41,6 +42,8 @@ export default function DashboardPage({
   const [copilot, setCopilot] = useState<{ suggestion: string; severity: "warning" | "critical"; suggestQuiz: boolean; quizTopic: string | null } | null>(null);
   const [copilotLoading, setCopilotLoading] = useState(false);
   const copilotCooldown = useRef<number>(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [totalSlidePages, setTotalSlidePages] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -164,6 +167,13 @@ export default function DashboardPage({
     if (sessionId) fetchPendingPolls(sessionId);
   };
 
+  const handleSlideChange = async (page: number) => {
+    setCurrentSlide(page);
+    if (sessionId) {
+      await supabase.from("sessions").update({ current_slide: page }).eq("id", sessionId);
+    }
+  };
+
   const handleGenerateQuiz = async (topic?: string) => {
     if (!sessionId || generatingQuiz) return;
     setGeneratingQuiz(true);
@@ -192,7 +202,7 @@ export default function DashboardPage({
       const res = await fetch("/api/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, currentSlide }),
       });
       const data = await res.json();
       setCopilot(data);
@@ -218,7 +228,7 @@ export default function DashboardPage({
     async function loadSession() {
       const { data } = await supabase
         .from("sessions")
-        .select("id, name, is_active")
+        .select("id, name, is_active, current_slide")
         .eq("code", code)
         .single();
 
@@ -230,6 +240,7 @@ export default function DashboardPage({
       setSessionId(data.id);
       setSessionName(data.name);
       setIsActive(data.is_active);
+      setCurrentSlide(data.current_slide ?? 0);
       fetchStats(data.id);
       fetchQuestions(data.id);
       fetchMaterials(data.id);
@@ -405,9 +416,19 @@ export default function DashboardPage({
               )}
             </div>
 
-            {/* Materials */}
+            {/* Slide Viewer + Materials */}
             {isActive && sessionId && (
               <MaterialUpload sessionId={sessionId} materials={materials} onUploaded={() => fetchMaterials(sessionId)} />
+            )}
+            {isActive && materials.length > 0 && materials[0]?.file_url && (
+              <SlideViewer
+                fileUrl={materials[0].file_url}
+                currentPage={currentSlide}
+                totalPages={totalSlidePages}
+                onPageChange={handleSlideChange}
+                onTotalPages={setTotalSlidePages}
+                isController={true}
+              />
             )}
 
             {/* Poll */}
