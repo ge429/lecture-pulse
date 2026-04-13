@@ -162,8 +162,8 @@ export default function ReportPage({
 
         {/* Materials */}
         {report.materials && report.materials.length > 0 && (
-          <div className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-3 text-[10px] font-bold text-muted uppercase tracking-widest">{t("report.materials")}</h2>
+          <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
+            <h2 className="mb-3 text-sm font-bold text-white uppercase tracking-widest">{t("report.materials")}</h2>
             <div className="flex flex-col gap-1">
               {report.materials.map((m, i) => (
                 <p key={i} className="text-sm text-foreground">📄 {m.fileName}</p>
@@ -174,8 +174,8 @@ export default function ReportPage({
 
         {/* AI Summary */}
         {report.aiSummary && (
-          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-card p-6 relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl" />
+          <div className="rounded-2xl border border-primary/20 p-6 relative overflow-hidden" style={{ background: "#1e1e32" }}>
+            <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl" style={{ background: "rgba(99,102,241,0.15)" }} />
             <h2 className="mb-3 text-sm font-bold text-primary">{t("report.aiAnalysis")}</h2>
             <div className="max-w-none text-sm leading-relaxed text-foreground whitespace-pre-wrap">
               {report.aiSummary}
@@ -185,15 +185,15 @@ export default function ReportPage({
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "rgba(99,102,241,0.08)" }}>
+          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "#1e1e32" }}>
             <div className="text-3xl font-black text-emerald-400">{stats.uniqueStudents}</div>
             <div className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-1">{t("report.students")}</div>
           </div>
-          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "rgba(99,102,241,0.08)" }}>
+          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "#1e1e32" }}>
             <div className="text-3xl font-black text-blue-400">{stats.totalResponses}</div>
             <div className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-1">{t("report.responses")}</div>
           </div>
-          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "rgba(99,102,241,0.08)" }}>
+          <div className="rounded-2xl border border-primary/20 p-5 text-center" style={{ background: "#1e1e32" }}>
             <div className={`text-3xl font-black ${confusionRate > 50 ? "text-rose-400" : confusionRate > 30 ? "text-amber-400" : "text-emerald-400"}`}>
               {confusionRate}%
             </div>
@@ -202,7 +202,7 @@ export default function ReportPage({
         </div>
 
         {/* Understanding Distribution */}
-        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "rgba(99,102,241,0.08)" }}>
+        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
           <h2 className="mb-4 text-sm font-bold text-white uppercase tracking-widest">
             {t("report.distribution")}
           </h2>
@@ -216,7 +216,7 @@ export default function ReportPage({
               return (
                 <div key={item.label} className="flex items-center gap-3">
                   <span className="w-20 text-sm text-gray-100">{item.emoji} {item.label}</span>
-                  <div className="flex-1 h-6 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                  <div className="flex-1 h-6 rounded-full overflow-hidden" style={{ background: "#2a2a45" }}>
                     <div className={`h-full ${item.color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
                   </div>
                   <span className={`w-24 text-right text-sm font-bold tabular-nums ${item.textColor}`}>
@@ -229,7 +229,7 @@ export default function ReportPage({
         </div>
 
         {/* Timeline */}
-        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "rgba(99,102,241,0.08)" }}>
+        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
           <h2 className="mb-1 text-sm font-bold text-white uppercase tracking-widest">{t("report.timeline")}</h2>
           <p className="mb-4 text-[10px] text-gray-400">{t("report.bucket")}</p>
           {timeline.length > 0 ? (
@@ -247,7 +247,7 @@ export default function ReportPage({
         </div>
 
         {/* Questions */}
-        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "rgba(99,102,241,0.08)" }}>
+        <div className="rounded-2xl border border-primary/20 p-6" style={{ background: "#1e1e32" }}>
           <h2 className="mb-4 text-sm font-bold text-white uppercase tracking-widest">
             {t("report.questions")} ({questions.total})
           </h2>
@@ -257,7 +257,7 @@ export default function ReportPage({
           ) : (
             <>
               {questions.clusters.map((cluster, i) => (
-                <div key={cluster.clusterId} className="mb-4 rounded-xl p-4 border-l-2 border-primary" style={{ background: "rgba(255,255,255,0.05)" }}>
+                <div key={cluster.clusterId} className="mb-4 rounded-xl p-4 border-l-2 border-primary" style={{ background: "#252540" }}>
                   <div className="mb-2 flex items-center gap-2">
                     <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
                       Group {i + 1}
@@ -275,7 +275,7 @@ export default function ReportPage({
               {questions.unclustered.length > 0 && (
                 <div className="flex flex-col gap-2">
                   {questions.unclustered.map((q, i) => (
-                    <div key={i} className="rounded-xl px-4 py-2.5 text-sm text-gray-100" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <div key={i} className="rounded-xl px-4 py-2.5 text-sm text-gray-100" style={{ background: "#252540" }}>
                       &ldquo;{q}&rdquo;
                     </div>
                   ))}
