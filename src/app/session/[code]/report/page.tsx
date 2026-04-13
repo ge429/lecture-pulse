@@ -142,7 +142,7 @@ export default function ReportPage({
   const dateStr = formatDate(report.session?.createdAt ?? "").split(" ")[0];
 
   return (
-    <div className="flex flex-1 flex-col p-4 md:p-8">
+    <div className="flex flex-col p-4 md:p-8">
       <div className="mx-auto w-full max-w-4xl space-y-6">
         {/* Header */}
         <div>
